@@ -295,15 +295,7 @@ def show_character():
     """
 
     components.html(html, height=520, scrolling=False)
-    
-
-        
-                
-
-        
-
-            
-        </svg>
+    </svg>
 
         <div class="holo-scan"></div>
         <div class="holo-title">JON AI</div>
