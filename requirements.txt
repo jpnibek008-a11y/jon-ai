@@ -1,8 +1,8 @@
-
+streamlit
 streamlit
 google-genai
-python-pptx
 pandas
-openpyxl
 requests
+python-pptx
+openpyxl
 
