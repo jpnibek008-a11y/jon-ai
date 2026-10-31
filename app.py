@@ -681,7 +681,57 @@ Matn:
 {text_to_translate}
 """
 
+            elif page == "🌐 Tarjimon":
+    st.title("🌐 JON AI — Universal tarjimon")
+
+    source_lang = st.selectbox(
+        "Matn qaysi tilda?",
+        ["Avtomatik aniqlash", "O'zbek", "English", "Русский", "Boshqa"]
+    )
+
+    target_lang = st.text_input(
+        "Qaysi tilga tarjima qilinsin?",
+        "English"
+    )
+
+    style = st.selectbox(
+        "Tarjima uslubi",
+        ["Tabiiy va ravon", "So'zma-so'z", "Rasmiy", "Akademik"]
+    )
+
+    text_to_translate = st.text_area(
+        "Tarjima qilinadigan matn",
+        height=180
+    )
+
+    if st.button("🌍 Tarjima qilish"):
+        if not text_to_translate.strip():
+            st.warning("Matn kiriting.")
+
+        elif not target_lang.strip():
+            st.warning("Tarjima tilini kiriting.")
+
+        else:
+            prompt = f"""
+Manba tili: {source_lang}
+Maqsad tili: {target_lang}
+Uslub: {style}
+
+Quyidagi matnni tarjima qil:
+{text_to_translate}
+
+Tarjima aniq va tabiiy bo'lsin. Noaniq joylarni belgilagin.
+"""
+
             with st.spinner("Tarjima tayyorlanmoqda..."):
+                result = ai(
+                    prompt,
+                    "Sen professional ko'p tilli tarjimonsan."
+                )
+
+            if result:
+                st.markdown("### Tarjima natijasi")
+                st.markdown(result)with st.spinner("Tarjima tayyorlanmoqda..."):
                 result = ai.    prompt,
                     "Sen ko'p tilli tarjimon yordamchisan. Aniqlikni birinchi o'ringa qo'y."
                 )if result:
