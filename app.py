@@ -668,7 +668,7 @@ elif page == "🌐 Tarjimon":
                 else "Faqat tarjimani ber; zarur bo'lsa, noaniq joyga qisqa eslatma qo'sh."
             )
 
-                        prompt = f"""
+prompt = f"""
 {source_instruction}
 Matnni {target_lang} tiliga {style.lower()} uslubda tarjima qil.
 {extra}
@@ -682,12 +682,9 @@ Matn:
 """
 
             with st.spinner("Tarjima tayyorlanmoqda..."):
-                result = ai(
-                    prompt,
+                result = ai.    prompt,
                     "Sen ko'p tilli tarjimon yordamchisan. Aniqlikni birinchi o'ringa qo'y."
-                )
-
-            if result:
+                )if result:
                 st.markdown("### Natija")
                 st.markdown(result)
                 st.caption(
