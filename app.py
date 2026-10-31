@@ -62,135 +62,247 @@ def ask_ai(prompt, extra_context=""):
         return f"Xatolik: {e}"
 
 def show_character():
-    html_code = """
+    import streamlit.components.v1 as components
+
+    html = r"""
+    <!DOCTYPE html>
     <html>
     <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-    body {
-        margin: 0;
-        background: transparent;
-    }
-
-    .holo-stage {
-        position: relative;
-        height: 470px;
-        width: 100%;
+      * { margin: 0; padding: 0; }
+      body {
+        background: radial-gradient(ellipse at center, #10285c 0%, #050816 75%);
         overflow: hidden;
-        border: 1px solid #00d9ff;
-        border-radius: 25px;
-        background: radial-gradient(
-            ellipse at center,
-            #123c72 0%,
-            #07152d 55%,
-            #030817 100%
-        );
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .holo-person {
-        width: 230px;
-        height: 340px;
-        animation: floatHolo 3s ease-in-out infinite;
-        filter: drop-shadow(0 0 15px #00d9ff);
-    }
-
-    .holo-glow {
-        position: absolute;
-        bottom: 35px;
-        width: 220px;
-        height: 30px;
-        border-radius: 50%;
-        background: #00d9ff;
-        filter: blur(25px);
-        animation: pulseHolo 2s infinite;
-    }
-
-    .holo-scan {
-        position: absolute;
+      }
+      #scene {
         width: 100%;
-        height: 3px;
-        background: #00eaff;
-        box-shadow: 0 0 18px #00eaff;
-        opacity: 0.5;
-        animation: scanHolo 4s linear infinite;
-    }
-
-    .holo-title {
+        height: 510px;
+        display: block;
+      }
+      .caption {
         position: absolute;
-        bottom: 15px;
-        color: #00eaff;
-        font-size: 23px;
-        font-weight: bold;
+        bottom: 16px;
+        width: 100%;
+        text-align: center;
+        color: #70eaff;
+        font: 14px Arial, sans-serif;
         letter-spacing: 5px;
-        text-shadow: 0 0 15px #00d9ff;
-    }
-
-    @keyframes floatHolo {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-15px); }
-    }
-
-    @keyframes pulseHolo {
-        0%, 100% { opacity: 0.4; }
-        50% { opacity: 0.9; }
-    }
-
-    @keyframes scanHolo {
-        from { top: 0; }
-        to { top: 100%; }
-    }
+        text-shadow: 0 0 12px #00d9ff;
+        pointer-events: none;
+      }
     </style>
     </head>
-
     <body>
-    <div class="holo-stage">
-        <div class="holo-glow"></div>
+    <div id="scene"></div>
+    <div class="caption">J O N   A I</div>
 
-        <svg class="holo-person"
-             viewBox="0 0 230 340"
-             xmlns="http://www.w3.org/2000/svg">
+    <script type="module">
+    import * as THREE from
+    'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-            <defs>
-                <linearGradient id="humanGlow"
-                    x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#b8ffff"/>
-                    <stop offset="50%" stop-color="#00d9ff"/>
-                    <stop offset="100%" stop-color="#1765ff"/>
-                </linearGradient>
-            </defs>
+    const container = document.getElementById("scene");
 
-            <circle cx="115" cy="65" r="42"
-                fill="url(#humanGlow)" opacity="0.75"/>
+    const scene = new THREE.Scene();
 
-            <path d="M78 125 Q115 105 152 125
-                     L190 165 L170 185 L150 160
-                     L160 260 L70 260 L80 160
-                     L60 185 L40 165 Z"
-                fill="url(#humanGlow)" opacity="0.65"/>
+    const camera = new THREE.PerspectiveCamera(
+      45, container.clientWidth / container.clientHeight, 0.1, 100
+    );
+    camera.position.set(0, 0, 8);
 
-            <path d="M95 105 L95 125 M135 105 L135 125"
-                stroke="#b8ffff" stroke-width="5"/>
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true
+    });
 
-            <path d="M70 260 L60 325 L105 325
-                     L115 265 L125 325 L170 325 L160 260"
-                fill="url(#humanGlow)" opacity="0.65"/>
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
 
-            <path d="M90 60 L105 60 M125 60 L140 60"
-                stroke="#ffffff" stroke-width="4"
-                stroke-linecap="round"/>
+    scene.add(new THREE.AmbientLight(0x8abfff, 2));
 
-            <path d="M85 65 Q115 80 145 65"
-                stroke="#ffffff" stroke-width="2"
-                fill="none"/>
+    const blueLight = new THREE.PointLight(0x00d9ff, 35, 20);
+    blueLight.position.set(2, 3, 4);
+    scene.add(blueLight);
 
-            <path d="M80 145 L150 145
-                     M75 175 L155 175
-                     M72 210 L158 210
-                     M75 245 L155 245"
-                stroke="#b8ffff" stroke-width="2"
-                opacity="0.8"/>
+    const purpleLight = new THREE.PointLight(0x7b2cff, 25, 20);
+    purpleLight.position.set(-3, -2, 3);
+    scene.add(purpleLight);
+
+    const character = new THREE.Group();
+    scene.add(character);
+
+    // Kristall tanasi
+    const coreGeometry = new THREE.IcosahedronGeometry(1.15, 2);
+    const coreMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x087dff,
+      metalness: 0.55,
+      roughness: 0.12,
+      transmission: 0.25,
+      transparent: true,
+      opacity: 0.88,
+      emissive: 0x003bff,
+      emissiveIntensity: 1.2
+    });
+
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    character.add(core);
+
+    // Ichki energiya yadrosi
+    const inner = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.48, 1),
+      new THREE.MeshBasicMaterial({
+        color: 0x6ffaff,
+        wireframe: true
+      })
+    );
+    character.add(inner);
+
+    // Yorqin ko'zlar
+    const eyeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x9fffff
+    });
+
+    function createEye(x, y) {
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.105, 20, 20),
+        eyeMaterial
+      );
+      eye.position.set(x, y, 0.92);
+      character.add(eye);
+    }
+
+    createEye(-0.34, 0.18);
+    createEye(0.34, 0.18);
+
+    // Gologramma halqalari
+    const rings = [];
+
+    for (let i = 0; i < 3; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.55 + i * 0.18, 0.012, 8, 120),
+        new THREE.MeshBasicMaterial({
+          color: i === 1 ? 0x9b55ff : 0x00eaff,
+          transparent: true,
+          opacity: 0.8
+        })
+      );
+
+      ring.rotation.x = Math.PI / 2 + i * 0.45;
+      ring.rotation.y = i * 0.6;
+      character.add(ring);
+      rings.push(ring);
+    }
+
+    // Suzib yuruvchi kristallar
+    const crystals = [];
+
+    for (let i = 0; i < 8; i++) {
+      const crystal = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.12 + Math.random() * 0.1),
+        new THREE.MeshBasicMaterial({
+          color: i % 2 ? 0x00eaff : 0x9b55ff,
+          wireframe: true
+        })
+      );
+
+      const angle = i / 8 * Math.PI * 2;
+      crystal.position.set(
+        Math.cos(angle) * 2.1,
+        Math.sin(angle) * 1.5,
+        Math.sin(angle * 2) * 0.4
+      );
+
+      character.add(crystal);
+      crystals.push(crystal);
+    }
+
+    // Yulduzsimon zarrachalar
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = [];
+
+    for (let i = 0; i < 450; i++) {
+      particlePositions.push(
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 8,
+        (Math.random() - 0.5) * 7
+      );
+    }
+
+    particleGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(particlePositions, 3)
+    );
+
+    const particles = new THREE.Points(
+      particleGeometry,
+      new THREE.PointsMaterial({
+        color: 0x62eaff,
+        size: 0.025,
+        transparent: true,
+        opacity: 0.8
+      })
+    );
+
+    scene.add(particles);
+
+    // Animatsiya
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const t = clock.getElapsedTime();
+
+      character.position.y = Math.sin(t * 1.4) * 0.16;
+      character.rotation.y = Math.sin(t * 0.5) * 0.35;
+      character.rotation.x = Math.sin(t * 0.7) * 0.08;
+
+      core.rotation.y += 0.003;
+      core.rotation.x += 0.002;
+      inner.rotation.y -= 0.012;
+      inner.rotation.x += 0.008;
+
+      rings.forEach((ring, i) => {
+        ring.rotation.z += 0.003 + i * 0.001;
+      });
+
+      crystals.forEach((crystal, i) => {
+        crystal.rotation.x += 0.012;
+        crystal.rotation.y += 0.009;
+        crystal.position.y += Math.sin(t * 1.5 + i) * 0.0015;
+      });
+
+      particles.rotation.y = t * 0.025;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+    </script>
+    </body>
+    </html>
+    """
+
+    components.html(html, height=520, scrolling=False)
+    
+
+        
+                
+
+        
+
+            
         </svg>
 
         <div class="holo-scan"></div>
