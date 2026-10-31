@@ -681,7 +681,7 @@ Matn:
 {text_to_translate}
 """
 
-            elif page == "🌐 Tarjimon":
+elif page == "🌐 Tarjimon":
     st.title("🌐 JON AI — Universal tarjimon")
 
     source_lang = st.selectbox(
@@ -731,14 +731,5 @@ Tarjima aniq va tabiiy bo'lsin. Noaniq joylarni belgilagin.
 
             if result:
                 st.markdown("### Tarjima natijasi")
-                st.markdown(result)with st.spinner("Tarjima tayyorlanmoqda..."):
-                result = ai.    prompt,
-                    "Sen ko'p tilli tarjimon yordamchisan. Aniqlikni birinchi o'ringa qo'y."
-                )if result:
-                st.markdown("### Natija")
                 st.markdown(result)
-                st.caption(
-                    "Kam ishlatiladigan yoki qadimgi tillardagi tarjimani "
-                    "mutaxassisga tekshirtirish tavsiya etiladi."
-                )
         
