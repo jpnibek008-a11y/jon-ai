@@ -134,7 +134,7 @@ st.markdown("""
     <div class="holo-name">JON AI</div>
 </div>
 """, unsafe_allow_html=True)
-)
+
 
 # API KALITI
 api_key = st.text_input(
