@@ -1,4 +1,5 @@
 
+import streamlit.components.v1 as components
 import streamlit as st
 import pandas as pd
 import requests
@@ -60,13 +61,20 @@ def ask_ai(prompt, extra_context=""):
     except Exception as e:
         return f"Xatolik: {e}"
 
-
 def show_character():
-    st.markdown("""
+    html_code = """
+    <html>
+    <head>
     <style>
+    body {
+        margin: 0;
+        background: transparent;
+    }
+
     .holo-stage {
         position: relative;
         height: 470px;
+        width: 100%;
         overflow: hidden;
         border: 1px solid #00d9ff;
         border-radius: 25px;
@@ -85,8 +93,7 @@ def show_character():
         width: 230px;
         height: 340px;
         animation: floatHolo 3s ease-in-out infinite;
-        filter: drop-shadow(0 0 12px #00d9ff)
-                drop-shadow(0 0 30px #007bff);
+        filter: drop-shadow(0 0 15px #00d9ff);
     }
 
     .holo-glow {
@@ -97,7 +104,6 @@ def show_character():
         border-radius: 50%;
         background: #00d9ff;
         filter: blur(25px);
-        opacity: 0.7;
         animation: pulseHolo 2s infinite;
     }
 
@@ -109,6 +115,16 @@ def show_character():
         box-shadow: 0 0 18px #00eaff;
         opacity: 0.5;
         animation: scanHolo 4s linear infinite;
+    }
+
+    .holo-title {
+        position: absolute;
+        bottom: 15px;
+        color: #00eaff;
+        font-size: 23px;
+        font-weight: bold;
+        letter-spacing: 5px;
+        text-shadow: 0 0 15px #00d9ff;
     }
 
     @keyframes floatHolo {
@@ -125,18 +141,10 @@ def show_character():
         from { top: 0; }
         to { top: 100%; }
     }
-
-    .holo-title {
-        position: absolute;
-        bottom: 15px;
-        color: #00eaff;
-        font-size: 23px;
-        font-weight: bold;
-        letter-spacing: 5px;
-        text-shadow: 0 0 15px #00d9ff;
-    }
     </style>
+    </head>
 
+    <body>
     <div class="holo-stage">
         <div class="holo-glow"></div>
 
@@ -169,13 +177,13 @@ def show_character():
                      L115 265 L125 325 L170 325 L160 260"
                 fill="url(#humanGlow)" opacity="0.65"/>
 
-            <path d="M85 65 Q115 80 145 65"
-                stroke="#ffffff" stroke-width="2"
-                fill="none" opacity="0.8"/>
-
             <path d="M90 60 L105 60 M125 60 L140 60"
                 stroke="#ffffff" stroke-width="4"
                 stroke-linecap="round"/>
+
+            <path d="M85 65 Q115 80 145 65"
+                stroke="#ffffff" stroke-width="2"
+                fill="none"/>
 
             <path d="M80 145 L150 145
                      M75 175 L155 175
@@ -188,15 +196,15 @@ def show_character():
         <div class="holo-scan"></div>
         <div class="holo-title">JON AI</div>
     </div>
-    """, unsafe_allow_html=True)
-    
-    
+    </body>
+    </html>
+    """
 
-
-
-
-
-    
+    components.html(
+        html_code,
+        height=490,
+        scrolling=False
+    )    
 def parse_slides(result):
     try:
         clean = result.strip()
