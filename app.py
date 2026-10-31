@@ -681,55 +681,125 @@ Matn:
 {text_to_translate}
 """
 
-            elif page == "🌐 Tarjimon":
+            
+elif page == "🌐 Tarjimon":
     st.title("🌐 JON AI — Universal tarjimon")
+    st.write("Istalgan tilga matn tarjima qiling.")
 
     source_lang = st.selectbox(
         "Matn qaysi tilda?",
-        ["Avtomatik aniqlash", "O'zbek", "English", "Русский", "Boshqa"]
+        [
+            "Avtomatik aniqlash", "O'zbek", "English",
+            "Русский", "العربية", "中文", "日本語",
+            "한국어", "Français", "Deutsch", "Español",
+            "Boshqa"
+        ]
     )
 
-    target_lang = st.text_input(
-        "Qaysi tilga tarjima qilinsin?",
-        "English"
+    target_choice = st.selectbox(
+        "Tarjima qilinadigan til",
+        [
+            "Tilni o'zim yozaman", "O'zbek", "English",
+            "Русский", "العربية", "中文 (Xitoy)",
+            "日本語 (Yapon)", "한국어 (Koreys)",
+            "Français (Fransuz)", "Deutsch (Nemis)",
+            "Español (Ispan)", "Português", "Türkçe",
+            "Italiano", "हिन्दी", "اردو", "فارسی",
+            "Қазақша", "Кыргызча", "Тоҷикӣ",
+            "Українська", "Polski", "Nederlands",
+            "עברית", "ไทย", "Tiếng Việt",
+            "বাংলা", "Latin", "Ancient Greek", "Sanskrit"
+        ]
+    )
+
+    target_custom = ""
+
+    if target_choice == "Tilni o'zim yozaman":
+        target_custom = st.text_input(
+            "Til nomini kiriting",
+            placeholder="Masalan: Suahili, Amhar yoki Maori"
+        )
+
+    target_lang = (
+        target_custom.strip()
+        if target_choice == "Tilni o'zim yozaman"
+        else target_choice
     )
 
     style = st.selectbox(
         "Tarjima uslubi",
-        ["Tabiiy va ravon", "So'zma-so'z", "Rasmiy", "Akademik"]
+        [
+            "Tabiiy va ravon",
+            "So'zma-so'z",
+            "Rasmiy",
+            "Akademik",
+            "Oddiy va tushunarli"
+        ]
+    )
+
+    explain = st.checkbox(
+        "Muhim so'zlar va iboralarni izohlash"
     )
 
     text_to_translate = st.text_area(
         "Tarjima qilinadigan matn",
-        height=180
+        height=180,
+        placeholder="Matnni shu yerga kiriting..."
     )
 
-    if st.button("🌍 Tarjima qilish"):
-        if not text_to_translate.strip():
-            st.warning("Matn kiriting.")
+    if st.button("🌍 Tarjima qilish", use_container_width=True):
 
-        elif not target_lang.strip():
+        if not text_to_translate.strip():
+            st.warning("Avval matn kiriting.")
+
+        elif not target_lang:
             st.warning("Tarjima tilini kiriting.")
 
         else:
+            source_instruction = (
+                "Manba tilini avtomatik aniqlagin."
+                if source_lang == "Avtomatik aniqlash"
+                else f"Manba tili: {source_lang}."
+            )
+
+            extra = (
+                "Tarjimadan keyin muhim so'z va iboralarni izohla."
+                if explain
+                else "Faqat tarjimani ber."
+            )
+
             prompt = f"""
-Manba tili: {source_lang}
-Maqsad tili: {target_lang}
-Uslub: {style}
+{source_instruction}
 
-Quyidagi matnni tarjima qil:
+Quyidagi matnni {target_lang} tiliga
+{style.lower()} uslubda tarjima qil.
+
+Mazmun, ohang va formatni saqla.
+Agar tarjima noaniq bo'lsa, buni ayt.
+
+{extra}
+
+Matn:
 {text_to_translate}
-
-Tarjima aniq va tabiiy bo'lsin. Noaniq joylarni belgilagin.
 """
 
-            with st.spinner("Tarjima tayyorlanmoqda..."):
+            with st.spinner("JON AI tarjima qilmoqda..."):
                 result = ai(
                     prompt,
-                    "Sen professional ko'p tilli tarjimonsan."
+                    "Sen professional ko'p tilli tarjimonsan. "
+                    "Aniq va tabiiy tarjima qil."
                 )
 
             if result:
-                st.markdown("### Tarjima natijasi")
-                st.markdown(result)
-        
+                st.success("Tarjima tayyor!")
+                st.subheader("📖 Tarjima natijasi")
+                st.write(result)
+
+                st.download_button(
+                    "⬇️ Tarjimani yuklab olish",
+                    data=result,
+                    file_name="jon_ai_tarjima.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
+                
