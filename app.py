@@ -665,4 +665,27 @@ elif page == "💎 Premium":
 
 st.sidebar.divider()
 st.sidebar.caption("JON AI — Your Virtual Assistant")
+
+# ==============================
+# 🖼️ JON AI — IMAGE FUNCTION
+# ==============================
+
+def get_image(uploaded_file):
+    if uploaded_file is None:
+        return None
+
+    try:
+        image_bytes = uploaded_file.getvalue()
+
+        image_data = {
+            "mime_type": uploaded_file.type,
+            "data": image_bytes
+        }
+
+        return image_data
+
+    except Exception as e:
+        st.error(f"Rasmni yuklashda xatolik: {e}")
+        return None
+        
         
