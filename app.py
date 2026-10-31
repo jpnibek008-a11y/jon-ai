@@ -682,6 +682,7 @@ Matn:
 """
 
             
+
 elif page == "🌐 Tarjimon":
     st.title("🌐 JON AI — Universal tarjimon")
     st.write("Istalgan tilga matn tarjima qiling.")
@@ -689,9 +690,17 @@ elif page == "🌐 Tarjimon":
     source_lang = st.selectbox(
         "Matn qaysi tilda?",
         [
-            "Avtomatik aniqlash", "O'zbek", "English",
-            "Русский", "العربية", "中文", "日本語",
-            "한국어", "Français", "Deutsch", "Español",
+            "Avtomatik aniqlash",
+            "O'zbek",
+            "English",
+            "Русский",
+            "العربية",
+            "中文",
+            "日本語",
+            "한국어",
+            "Français",
+            "Deutsch",
+            "Español",
             "Boshqa"
         ]
     )
@@ -699,16 +708,36 @@ elif page == "🌐 Tarjimon":
     target_choice = st.selectbox(
         "Tarjima qilinadigan til",
         [
-            "Tilni o'zim yozaman", "O'zbek", "English",
-            "Русский", "العربية", "中文 (Xitoy)",
-            "日本語 (Yapon)", "한국어 (Koreys)",
-            "Français (Fransuz)", "Deutsch (Nemis)",
-            "Español (Ispan)", "Português", "Türkçe",
-            "Italiano", "हिन्दी", "اردو", "فارسی",
-            "Қазақша", "Кыргызча", "Тоҷикӣ",
-            "Українська", "Polski", "Nederlands",
-            "עברית", "ไทย", "Tiếng Việt",
-            "বাংলা", "Latin", "Ancient Greek", "Sanskrit"
+            "Tilni o'zim yozaman",
+            "O'zbek",
+            "English",
+            "Русский",
+            "العربية",
+            "中文",
+            "日本語",
+            "한국어",
+            "Français",
+            "Deutsch",
+            "Español",
+            "Português",
+            "Türkçe",
+            "Italiano",
+            "हिन्दी",
+            "اردو",
+            "فارسی",
+            "Қазақша",
+            "Кыргызча",
+            "Тоҷикӣ",
+            "Українська",
+            "Polski",
+            "Nederlands",
+            "עברית",
+            "ไทย",
+            "Tiếng Việt",
+            "বাংলা",
+            "Latin",
+            "Ancient Greek",
+            "Sanskrit"
         ]
     )
 
@@ -716,8 +745,7 @@ elif page == "🌐 Tarjimon":
 
     if target_choice == "Tilni o'zim yozaman":
         target_custom = st.text_input(
-            "Til nomini kiriting",
-            placeholder="Masalan: Suahili, Amhar yoki Maori"
+            "Til nomini kiriting"
         )
 
     target_lang = (
@@ -738,7 +766,7 @@ elif page == "🌐 Tarjimon":
     )
 
     explain = st.checkbox(
-        "Muhim so'zlar va iboralarni izohlash"
+        "Muhim so'z va iboralarni izohlash"
     )
 
     text_to_translate = st.text_area(
@@ -763,7 +791,7 @@ elif page == "🌐 Tarjimon":
             )
 
             extra = (
-                "Tarjimadan keyin muhim so'z va iboralarni izohla."
+                "Muhim so'z va iboralarni izohla."
                 if explain
                 else "Faqat tarjimani ber."
             )
@@ -774,8 +802,8 @@ elif page == "🌐 Tarjimon":
 Quyidagi matnni {target_lang} tiliga
 {style.lower()} uslubda tarjima qil.
 
-Mazmun, ohang va formatni saqla.
-Agar tarjima noaniq bo'lsa, buni ayt.
+Mazmun, ohang, ism-shariflar va formatni saqla.
+Noaniqlik bo'lsa, bu haqda ogohlantir.
 
 {extra}
 
@@ -801,5 +829,7 @@ Matn:
                     file_name="jon_ai_tarjima.txt",
                     mime="text/plain",
                     use_container_width=True
+                )
+                
                 )
                 
