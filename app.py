@@ -361,5 +361,5 @@ elif page == "📊 Excel tahlil":
             q=st.text_input("Jadval bo'yicha savol")
             if st.button("AI bilan tahlil"):
                 result=ai(f"Jadval namunasi:\n{df.head(30).to_string()}\nSavol: {q or 'Asosiy xulosalarni chiqar'}")
-                if resu
+                if result: st.markdown(result)
     
