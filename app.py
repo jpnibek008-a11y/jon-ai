@@ -96,7 +96,7 @@ if savol:
                 with st.spinner("JON AI o‘ylamoqda..."):
 
                     javob = client.models.generate_content(
-                        model="gemini-3.8-flash",
+                        model="gemini-3.5-flash-lite",
                         contents=[
                             "Sen JON AI nomli aqlli yordamchisan. "
                             "O‘zbek tilida aniq, samimiy va foydali javob ber.",
