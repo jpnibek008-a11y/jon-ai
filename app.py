@@ -54,7 +54,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.divider(
+st.divider()
 # JON AI HOLOGRAMMA
 st.markdown("""
 <style>
