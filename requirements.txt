@@ -1,8 +1,8 @@
+
 streamlit
 google-genai
+python-pptx
 pandas
 openpyxl
-xlrd
-python-pptx
-Pillow
 requests
+
