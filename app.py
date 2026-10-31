@@ -668,12 +668,30 @@ elif page == "🌐 Tarjimon":
                 else "Faqat tarjimani ber; zarur bo'lsa, noaniq joyga qisqa eslatma qo'sh."
             )
 
-            prompt = f"""
+                        prompt = f"""
 {source_instruction}
 Matnni {target_lang} tiliga {style.lower()} uslubda tarjima qil.
 {extra}
 Mazmun, ohang, ism-shariflar va formatni imkon qadar saqla.
 Agar bu til yoki yozuv bo'yicha ishonchli tarjima qilish qiyin bo'lsa,
 buni ochiq ayt; taxminiy iboralarni aniq tarjima deb ko'rsatma.
-Qadimgi yoki kam resursli t
+Qadimgi yoki kam resursli tillarda noaniqliklarni alohida belgilagin.
+
+Matn:
+{text_to_translate}
+"""
+
+            with st.spinner("Tarjima tayyorlanmoqda..."):
+                result = ai(
+                    prompt,
+                    "Sen ko'p tilli tarjimon yordamchisan. Aniqlikni birinchi o'ringa qo'y."
+                )
+
+            if result:
+                st.markdown("### Natija")
+                st.markdown(result)
+                st.caption(
+                    "Kam ishlatiladigan yoki qadimgi tillardagi tarjimani "
+                    "mutaxassisga tekshirtirish tavsiya etiladi."
+                )
         
