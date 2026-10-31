@@ -54,7 +54,87 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.divider()
+st.divider(
+# JON AI HOLOGRAMMA
+st.markdown("""
+<style>
+.holo-stage {
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle, #123b70, #071329 70%);
+    border: 1px solid #00d9ff;
+    border-radius: 24px;
+    box-shadow: 0 0 25px #007bff55;
+}
+
+.holo-head {
+    width: 75px;
+    height: 85px;
+    border: 3px solid #00eaff;
+    border-radius: 45% 45% 40% 40%;
+    background: linear-gradient(135deg, #1c83bd55, #00d9ff22);
+    box-shadow: 0 0 25px #00d9ff;
+    position: relative;
+    animation: float 3s ease-in-out infinite;
+}
+
+.holo-head:before {
+    content: "◉   ◉";
+    position: absolute;
+    top: 25px;
+    left: 13px;
+    color: #aaffff;
+    font-size: 18px;
+    text-shadow: 0 0 12px #00ffff;
+}
+
+.holo-body {
+    width: 145px;
+    height: 85px;
+    margin-top: 8px;
+    border: 3px solid #00d9ff;
+    border-radius: 65px 65px 15px 15px;
+    background: linear-gradient(90deg, #0875aa55, #00eaff33);
+    box-shadow: 0 0 25px #00d9ff;
+    animation: float 3s ease-in-out infinite;
+}
+
+.holo-ring {
+    width: 190px;
+    height: 35px;
+    border: 2px solid #00eaff;
+    border-radius: 50%;
+    box-shadow: 0 0 18px #00d9ff;
+    margin-top: -8px;
+}
+
+.holo-name {
+    color: #8ffaff;
+    font-size: 19px;
+    font-weight: bold;
+    margin-top: 12px;
+    text-shadow: 0 0 12px #00d9ff;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+</style>
+
+<div class="holo-stage">
+    <div class="holo-head"></div>
+    <div class="holo-body"></div>
+    <div class="holo-ring"></div>
+    <div class="holo-name">JON AI</div>
+</div>
+""", unsafe_allow_html=True)
+)
 
 # API KALITI
 api_key = st.text_input(
