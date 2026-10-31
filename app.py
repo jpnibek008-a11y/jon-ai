@@ -681,7 +681,7 @@ Matn:
 {text_to_translate}
 """
 
-elif page == "🌐 Tarjimon":
+            elif page == "🌐 Tarjimon":
     st.title("🌐 JON AI — Universal tarjimon")
 
     source_lang = st.selectbox(
