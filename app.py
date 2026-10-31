@@ -350,16 +350,36 @@ elif page == "🎵 Kayfiyat va musiqa":
 
 elif page == "📊 Excel tahlil":
     st.title("📊 Excel va hisob-kitob")
-    file=st.file_uploader("Excel yoki CSV faylini yuklang",type=["xlsx","xls","csv"])
+    file = st.file_uploader(
+        "Excel yoki CSV faylini yuklang",
+        type=["xlsx", "xls", "csv"]
+    )
+
     if file:
         try:
-            df=pd.read_csv(file) if file.name.lower().endswith(".csv") else pd.read_excel(file)
-            st.success(f"Yuklandi: {df.shape[0]} qator, {df.shape[1]} ustun")
-            st.dataframe(df,use_container_width=True)
+            if file.name.lower().endswith(".csv"):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+
+            st.success(
+                f"Yuklandi: {df.shape[0]} qator, {df.shape[1]} ustun"
+            )
+            st.dataframe(df, use_container_width=True)
+
             st.subheader("Sonli ustunlar statistikasi")
-            st.dataframe(df.describe(),use_container_width=True)
-            q=st.text_input("Jadval bo'yicha savol")
+            st.dataframe(df.describe(), use_container_width=True)
+
+            q = st.text_input("Jadval bo'yicha savol")
+
             if st.button("AI bilan tahlil"):
-                result=ai(f"Jadval namunasi:\n{df.head(30).to_string()}\nSavol: {q or 'Asosiy xulosalarni chiqar'}")
-                if result: st.markdown(result)
+                result = ai(
+                    f"Jadval namunasi:\n{df.head(30).to_string()}\n"
+                    f"Savol: {q or 'Asosiy xulosalarni chiqar'}"
+                )
+                if result:
+                    st.markdown(result)
+
+        except Exception as e:
+            st.error("Faylni o'qib bo'lmadi: " + str(e))
     
