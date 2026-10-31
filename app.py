@@ -295,20 +295,7 @@ def show_character():
     """
 
     components.html(html, height=520, scrolling=False)
-    </svg>
-
-        <div class="holo-scan"></div>
-        <div class="holo-title">JON AI</div>
-    </div>
-    </body>
-    </html>
-    """
-
-    components.html(
-        html_code,
-        height=490,
-        scrolling=False
-    )    
+    </svg>   
 def parse_slides(result):
     try:
         clean = result.strip()
