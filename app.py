@@ -60,6 +60,7 @@ def ask_ai(prompt, extra_context=""):
     except Exception as e:
         return f"Xatolik: {e}"
 
+
 def show_character():
     st.markdown("""
     <style>
@@ -69,9 +70,12 @@ def show_character():
         overflow: hidden;
         border: 1px solid #00d9ff;
         border-radius: 25px;
-        background:
-        radial-gradient(ellipse at center,
-        #123c72 0%, #07152d 55%, #030817 100%);
+        background: radial-gradient(
+            ellipse at center,
+            #123c72 0%,
+            #07152d 55%,
+            #030817 100%
+        );
         display: flex;
         justify-content: center;
         align-items: center;
@@ -152,26 +156,17 @@ def show_character():
             <circle cx="115" cy="65" r="42"
                 fill="url(#humanGlow)" opacity="0.75"/>
 
-            <path d="M78 125
-                     Q115 105 152 125
-                     L190 165
-                     L170 185
-                     L150 160
-                     L160 260
-                     L70 260
-                     L80 160
-                     L60 185
-                     L40 165 Z"
+            <path d="M78 125 Q115 105 152 125
+                     L190 165 L170 185 L150 160
+                     L160 260 L70 260 L80 160
+                     L60 185 L40 165 Z"
                 fill="url(#humanGlow)" opacity="0.65"/>
 
-            <path d="M95 105 L95 125
-                     M135 105 L135 125"
+            <path d="M95 105 L95 125 M135 105 L135 125"
                 stroke="#b8ffff" stroke-width="5"/>
 
-            <path d="M70 260 L60 325
-                     L105 325 L115 265
-                     L125 325 L170 325
-                     L160 260"
+            <path d="M70 260 L60 325 L105 325
+                     L115 265 L125 325 L170 325 L160 260"
                 fill="url(#humanGlow)" opacity="0.65"/>
 
             <path d="M85 65 Q115 80 145 65"
@@ -188,13 +183,13 @@ def show_character():
                      M75 245 L155 245"
                 stroke="#b8ffff" stroke-width="2"
                 opacity="0.8"/>
-
         </svg>
 
         <div class="holo-scan"></div>
         <div class="holo-title">JON AI</div>
     </div>
     """, unsafe_allow_html=True)
+    
     
 
 
