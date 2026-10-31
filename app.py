@@ -60,6 +60,7 @@ def ask_ai(prompt, extra_context=""):
 
     except Exception as e:
         return f"Xatolik: {e}"
+    import streamlit.components.v1 as components
 
 def show_character():
     import streamlit.components.v1 as components
@@ -295,7 +296,7 @@ def show_character():
     """
 
     components.html(html, height=520, scrolling=False)
-    </svg>   
+    
 def parse_slides(result):
     try:
         clean = result.strip()
