@@ -60,49 +60,147 @@ def ask_ai(prompt, extra_context=""):
     except Exception as e:
         return f"Xatolik: {e}"
 
-
 def show_character():
-    st.markdown(
-        "<div style='text-align:center;padding:35px;"
-        "border:1px solid #00d9ff;border-radius:20px;"
-        "background:linear-gradient(135deg,#07152d,#17245c);'>"
-        "<div style='font-size:100px;'>🤖</div>"
-        "<h1 style='color:#00eaff;'>JON AI 3.5</h1>"
-        "<p style='color:white;'>VIRTUAL INTELLIGENCE ONLINE</p>"
-        "</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("""
+    <style>
+    .holo-stage {
+        position: relative;
+        height: 470px;
+        overflow: hidden;
+        border: 1px solid #00d9ff;
+        border-radius: 25px;
+        background:
+        radial-gradient(ellipse at center,
+        #123c72 0%, #07152d 55%, #030817 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .holo-person {
+        width: 230px;
+        height: 340px;
+        animation: floatHolo 3s ease-in-out infinite;
+        filter: drop-shadow(0 0 12px #00d9ff)
+                drop-shadow(0 0 30px #007bff);
+    }
+
+    .holo-glow {
+        position: absolute;
+        bottom: 35px;
+        width: 220px;
+        height: 30px;
+        border-radius: 50%;
+        background: #00d9ff;
+        filter: blur(25px);
+        opacity: 0.7;
+        animation: pulseHolo 2s infinite;
+    }
+
+    .holo-scan {
+        position: absolute;
+        width: 100%;
+        height: 3px;
+        background: #00eaff;
+        box-shadow: 0 0 18px #00eaff;
+        opacity: 0.5;
+        animation: scanHolo 4s linear infinite;
+    }
+
+    @keyframes floatHolo {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+    }
+
+    @keyframes pulseHolo {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.9; }
+    }
+
+    @keyframes scanHolo {
+        from { top: 0; }
+        to { top: 100%; }
+    }
+
+    .holo-title {
+        position: absolute;
+        bottom: 15px;
+        color: #00eaff;
+        font-size: 23px;
+        font-weight: bold;
+        letter-spacing: 5px;
+        text-shadow: 0 0 15px #00d9ff;
+    }
+    </style>
+
+    <div class="holo-stage">
+        <div class="holo-glow"></div>
+
+        <svg class="holo-person"
+             viewBox="0 0 230 340"
+             xmlns="http://www.w3.org/2000/svg">
+
+            <defs>
+                <linearGradient id="humanGlow"
+                    x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#b8ffff"/>
+                    <stop offset="50%" stop-color="#00d9ff"/>
+                    <stop offset="100%" stop-color="#1765ff"/>
+                </linearGradient>
+            </defs>
+
+            <circle cx="115" cy="65" r="42"
+                fill="url(#humanGlow)" opacity="0.75"/>
+
+            <path d="M78 125
+                     Q115 105 152 125
+                     L190 165
+                     L170 185
+                     L150 160
+                     L160 260
+                     L70 260
+                     L80 160
+                     L60 185
+                     L40 165 Z"
+                fill="url(#humanGlow)" opacity="0.65"/>
+
+            <path d="M95 105 L95 125
+                     M135 105 L135 125"
+                stroke="#b8ffff" stroke-width="5"/>
+
+            <path d="M70 260 L60 325
+                     L105 325 L115 265
+                     L125 325 L170 325
+                     L160 260"
+                fill="url(#humanGlow)" opacity="0.65"/>
+
+            <path d="M85 65 Q115 80 145 65"
+                stroke="#ffffff" stroke-width="2"
+                fill="none" opacity="0.8"/>
+
+            <path d="M90 60 L105 60 M125 60 L140 60"
+                stroke="#ffffff" stroke-width="4"
+                stroke-linecap="round"/>
+
+            <path d="M80 145 L150 145
+                     M75 175 L155 175
+                     M72 210 L158 210
+                     M75 245 L155 245"
+                stroke="#b8ffff" stroke-width="2"
+                opacity="0.8"/>
+
+        </svg>
+
+        <div class="holo-scan"></div>
+        <div class="holo-title">JON AI</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
 
 
-def get_image(query):
-    try:
-        url = "https://commons.wikimedia.org/w/api.php"
 
-        params = {
-            "action": "query",
-            "generator": "search",
-            "gsrsearch": query,
-            "gsrnamespace": 6,
-            "gsrlimit": 1,
-            "prop": "imageinfo",
-            "iiprop": "url",
-            "format": "json"
-        }
 
-        r = requests.get(url, params=params, timeout=15)
-        pages = r.json().get("query", {}).get("pages", {})
 
-        for page in pages.values():
-            image_url = page["imageinfo"][0]["url"]
-            result = requests.get(image_url, timeout=20)
-
-            if result.status_code == 200:
-                return result.content
-
-    except Exception:
-        return None
-
-    return None
     
 def parse_slides(result):
     try:
