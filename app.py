@@ -77,10 +77,22 @@ if savol:
                 with st.spinner("JON AI o‘ylamoqda..."):
                     javob = client.models.generate_content(
                         model="gemini-3.8-flash",
-                    ,
+                                with st.chat_message("assistant"):
+                with st.spinner("JON AI o‘ylamoqda..."):
+                    javob = client.models.generate_content(
+                        model="gemini-3.8-flash",
                         contents=[
                             "Sen JON AI nomli yordamchisan. "
                             "O‘zbek tilida aniq va samimiy javob ber.",
+                            savol
+                        ]
+                    )
+
+                    matn = javob.text or "Hozir javob yaratilmadi."
+                    st.markdown(matn)
+                    
+                        
+                    
                             savol
                         ]
                     )
