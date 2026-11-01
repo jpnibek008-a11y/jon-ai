@@ -16,8 +16,8 @@ st.set_page_config(
     layout="wide"
 )
 
-APP_VERSION = "3.5"
-MODEL = "gemini-3.5-flash"
+APP_VERSION = "3.8"
+MODEL = "gemini-3.8-flash"
 
 JON_CORE = """
 Sen JON AI 3.5 nomli aqlli virtual yordamchisan.
@@ -43,24 +43,32 @@ for key, value in defaults.items():
 
 
 def ask_ai(prompt, extra_context=""):
-    api_key = st.session_state.get("api_key", "")
+    api_key = st.session_state.get("api_key", "").strip()
 
     if not api_key:
-        return "Sozlamalardan Gemini API kalitini kiriting."
+        return "API kalitini Sozlamalardan kiriting."
 
     try:
         client = genai.Client(api_key=api_key)
 
         response = client.models.generate_content(
             model=MODEL,
-            contents=JON_CORE + "\n" + extra_context + "\n" + prompt
+            contents=(
+                JON_CORE
+                + "\n"
+                + extra_context
+                + "\n"
+                + prompt
+            )
         )
 
-        return response.text or "Javob olinmadi."
+        if response.text:
+            return response.text
+
+        return "AI javob qaytarmadi."
 
     except Exception as e:
-        return f"Xatolik: {e}"
-    import streamlit.components.v1 as components
+        return f"Gemini API xatoligi: {str(e)}"
 
 def show_character():
     import streamlit.components.v1 as components
