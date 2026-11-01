@@ -718,39 +718,37 @@ elif page == "👤 Personaj":
         "Bu versiyada yuklangan rasm personaj portreti sifatida "
         "ko'rsatiladi. U avtomatik 3D modelga aylantirilmaydi."
     )
-
-
 elif page == "⚙️ Sozlamalar":
     st.title("⚙️ JON AI — Sozlamalar")
 
     st.markdown("### Gemini API")
 
-    st.text_input(
+    api_input = st.text_input(
         "Gemini API kaliti",
         type="password",
-        key="api_key"
+        value=st.session_state.get("api_key", ""),
+        key="api_input"
     )
 
-    st.caption(
-        "API kalitingizni hech kimga yubormang yoki oshkor qilmang."
-    )
+    if st.button("💾 API kalitini saqlash"):
+        st.session_state["api_key"] = api_input.strip()
+        st.success("API kaliti saqlandi!")
 
     if st.button("🔄 API ulanishini tekshirish"):
-        if st.session_state.api_key:
-            with st.spinner("Tekshirilmoqda..."):
-                test = ask_ai("Salom. Faqat OK deb javob ber.")
-                if test.startswith("Xatolik:"):
-                    st.error(test)
-                else:
-                    st.success("API javob berdi!")
+        if st.session_state.get("api_key", "").strip():
+            result = ask_ai("Salom. Faqat OK deb javob ber.")
+
+            if result.startswith("Gemini API xatoligi:"):
+                st.error(result)
+            else:
+                st.success("API javob berdi!")
+                st.write(result)
         else:
-            st.warning("API kalitini kiriting.")
+            st.warning("API kalitini kiriting!")
 
     st.divider()
     st.write("Ilova versiyasi:", APP_VERSION)
     st.write("Model:", MODEL)
-
-
 elif page == "💎 Premium":
     st.title("💎 JON AI Premium")
 
