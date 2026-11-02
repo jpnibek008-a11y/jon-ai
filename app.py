@@ -16,8 +16,8 @@ st.set_page_config(
     layout="wide"
 )
 
-APP_VERSION = "3.8"
-MODEL = "gemini-3.8-flash"
+APP_VERSION = "3.5"
+MODEL = "gemini-3.5-flash"
 
 JON_CORE = """
 Sen JON AI 3.5 nomli aqlli virtual yordamchisan.
