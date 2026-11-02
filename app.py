@@ -248,8 +248,11 @@ def show_character(answer=""):
 
     components.html(html, height=510, scrolling=False)
     
-    def parse_slides(result):
+    def my_function():
     try:
+        # kodlar
+    except Exception as e:
+        st.error(f"Xatolik: {e}")
         clean = result.strip()
         clean = clean.replace("```json", "").replace("```", "")
         start = clean.find("[")
