@@ -214,16 +214,12 @@ def show_character(answer=""):
         speech.lang = "uz-UZ";
         speech.rate = 1;
         speech.pitch = 1;
-
         speech.onstart = () => {
             document.getElementById("status").innerText =
                 "● JON AI GAPIRMOQDA";
-
-            document.getElementById("avatarBox")
-                .classList.add("talking");
         };
 
-        speech.onend = () => {
+      speech.onend = () => {
             document.getElementById("status").innerText =
                 "● ONLINE";
 
@@ -237,11 +233,16 @@ def show_character(answer=""):
     </body>
     </html>
     """
- html = html.replace(
-        "AVATAR_PLACEHOLDER", avatar_html
-    )
+
     html = html.replace(
         "AVATAR_PLACEHOLDER", avatar_html
+    )
+
+    html = html.replace(
+        "ANSWER_PLACEHOLDER", answer_json
+    )
+
+    components.html(html, height=510, scrolling=False)
     )
 
     html = html.replace(
