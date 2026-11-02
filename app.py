@@ -242,8 +242,7 @@ def show_character(answer=""):
         "ANSWER_PLACEHOLDER", answer_json
     )
 
-    components.html(html, height=510, scrolling=False)
-    )
+    components.html(html, height=510, scrolling=False 
 
     html = html.replace(
         "ANSWER_PLACEHOLDER", answer_json
