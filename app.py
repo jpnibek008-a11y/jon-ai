@@ -297,7 +297,11 @@ def create_presentation(topic, slides_data):
     output.seek(0)
 
     return output
-    pages = [
+
+
+# SIDEBAR MENYU
+
+pages = [
     "🏠 Bosh sahifa",
     "🤖 AI Chat",
     "🎓 Ta'lim markazi",
@@ -329,6 +333,15 @@ if page == "🏠 Bosh sahifa":
     st.caption("Sizning shaxsiy virtual yordamchingiz")
 
     show_character()
+
+    st.markdown("### Xush kelibsiz!")
+    st.write(
+        "JON AI bilan suhbatlashing, bilim oling, "
+        "tarjima qiling va yangi loyihalar yarating."
+    )
+    
+
+   show_character()
 
     st.markdown("### Xush kelibsiz!")
     st.write(
