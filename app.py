@@ -794,8 +794,9 @@ def get_image(uploaded_file):
 import json
 import os
 
-client = OpenAI(
-    from openai import OpenAI
+  client = OpenAI(
+    api_key=st.secrets["OPENAI_API_KEY"]
+    )
 import streamlit as st
 
 client = OpenAI(
