@@ -800,9 +800,7 @@ import streamlit as st
 client = OpenAI(
     api_key=st.secrets["OPENAI_API_KEY"]
 )
-)
 MEMORY_FILE = "ai_memory.json"
-
 # Xotirani yuklash
 def load_memory():
     if os.path.exists(MEMORY_FILE):
