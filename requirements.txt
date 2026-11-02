@@ -5,4 +5,5 @@ pandas
 requests
 python-pptx
 openpyxl
+pip install openai
 
