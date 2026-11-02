@@ -240,15 +240,15 @@ def show_character(answer=""):
  html = html.replace(
         "AVATAR_PLACEHOLDER", avatar_html
     )
+    html = html.replace(
+        "AVATAR_PLACEHOLDER", avatar_html
+    )
 
     html = html.replace(
         "ANSWER_PLACEHOLDER", answer_json
     )
-html = html.replace(
-    "ANSWER_PLACEHOLDER", answer_json
-)
 
-components.html(html, height=510, scrolling=False)
+    components.html(html, height=510, scrolling=False)
 
 
 def my_function():
@@ -263,12 +263,22 @@ def my_function():
 
         return json.loads(clean[start:end])
 
-    except Exception:
-        return [
-            {
-                # Bu yerda eski kodingizdagi obyektlar qoladi
-            }
-        ]
+    except Exception as e:
+        st.error(f"JSON xatosi: {e}")
+        return []
+
+
+def create_presentation(topic, slides_data):
+    prs = Presentation()
+
+    for item in slides_data:
+        slide = prs.slides.add_slide(
+            prs.slide_layouts[1]
+        )
+
+        slide.shapes.title.text = str(
+            item.get("title", topic)
+        )
     def create_presentation(topic, slides_data):
     prs = Presentation()
 
