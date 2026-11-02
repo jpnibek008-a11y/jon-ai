@@ -1,4 +1,6 @@
-
+from openai import OpenAI
+import streamlit as st
+import os
 import streamlit.components.v1 as components
 import streamlit as st
 import pandas as pd
@@ -792,8 +794,9 @@ def get_image(uploaded_file):
 import json
 import os
 
-client = OpenAI(api_key="YOUR_API_KEY")
-
+client = OpenAI(
+    api_key=st.secrets["OPENAI_API_KEY"]
+)
 MEMORY_FILE = "ai_memory.json"
 
 # Xotirani yuklash
