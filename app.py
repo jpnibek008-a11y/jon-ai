@@ -71,243 +71,184 @@ def ask_ai(prompt, extra_context=""):
 
     except Exception as e:
         return f"Gemini API xatoligi: {str(e)}"
+import base64
+from pathlib import Path
+import json
+def show_character(answer=""):
+    avatar_path = Path("jon_avatar.png")
 
-def show_character():
-    import streamlit.components.v1 as components
+    if avatar_path.exists():
+        avatar_data = base64.b64encode(
+            avatar_path.read_bytes()
+        ).decode("utf-8")
 
-    html = r"""
+        avatar_html = f"""
+        <img src="data:image/png;base64,{avatar_data}"
+             class="avatar">
+        """
+    else:
+        avatar_html = '<div class="placeholder">🤖</div>'
+
+    answer_json = json.dumps(answer, ensure_ascii=False)
+
+    html = """
     <!DOCTYPE html>
     <html>
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      * { margin: 0; padding: 0; }
-      body {
-        background: radial-gradient(ellipse at center, #10285c 0%, #050816 75%);
-        overflow: hidden;
-      }
-      #scene {
-        width: 100%;
-        height: 510px;
-        display: block;
-      }
-      .caption {
-        position: absolute;
-        bottom: 16px;
-        width: 100%;
+    body {
+        margin: 0;
+        background: radial-gradient(
+            circle, #10285c, #030817
+        );
+        color: white;
+        font-family: Arial;
         text-align: center;
-        color: #70eaff;
-        font: 14px Arial, sans-serif;
-        letter-spacing: 5px;
-        text-shadow: 0 0 12px #00d9ff;
-        pointer-events: none;
-      }
+    }
+
+    .stage {
+        padding: 20px;
+        min-height: 440px;
+    }
+
+    .avatar {
+        width: min(85%, 340px);
+        height: 350px;
+        object-fit: contain;
+        filter: drop-shadow(0 0 25px #008cff);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .placeholder {
+        font-size: 180px;
+        padding: 55px 0;
+        filter: drop-shadow(0 0 25px #008cff);
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+
+    .status {
+        color: #00eaff;
+        text-shadow: 0 0 12px #00eaff;
+        margin: 12px;
+    }
+
+    button {
+        background: #006eff;
+        color: white;
+        border: 1px solid #00dfff;
+        border-radius: 25px;
+        padding: 12px 25px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 0 15px #006eff;
+    }
+
+    button:active {
+        transform: scale(.96);
+    }
+
+    .talking {
+        animation: glow .7s infinite alternate;
+    }
+
+    @keyframes glow {
+        from { filter: drop-shadow(0 0 10px #008cff); }
+        to { filter: drop-shadow(0 0 35px #00eaff); }
+    }
+
+    .message {
+        background: #071a3d;
+        border: 1px solid #008cff;
+        border-radius: 15px;
+        padding: 12px;
+        margin: 15px auto;
+        max-width: 500px;
+        text-align: left;
+        line-height: 1.5;
+    }
     </style>
     </head>
+
     <body>
-    <div id="scene"></div>
-    <div class="caption">J O N   A I</div>
+    <div class="stage">
+        <div id="avatarBox">
+            AVATAR_PLACEHOLDER
+        </div>
 
-    <script type="module">
-    import * as THREE from
-    'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+        <h2 style="color:#00dfff">JON AI</h2>
+        <div class="status" id="status">● ONLINE</div>
 
-    const container = document.getElementById("scene");
+        <div class="message" id="message">
+            Salom! Men JON AI. Sizga qanday yordam beray?
+        </div>
 
-    const scene = new THREE.Scene();
+        <button onclick="speakAnswer()">
+            🔊 Javobni ovozli eshitish
+        </button>
+    </div>
 
-    const camera = new THREE.PerspectiveCamera(
-      45, container.clientWidth / container.clientHeight, 0.1, 100
-    );
-    camera.position.set(0, 0, 8);
+    <script>
+    const answer = ANSWER_PLACEHOLDER;
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true
-    });
+    function speakAnswer() {
+        if (!answer) {
+            document.getElementById("status").innerText =
+                "● Hozircha yangi javob yo'q";
+            return;
+        }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
+        if (!("speechSynthesis" in window)) {
+            document.getElementById("status").innerText =
+                "Brauzeringiz ovozli nutqni qo'llamaydi";
+            return;
+        }
 
-    scene.add(new THREE.AmbientLight(0x8abfff, 2));
+        window.speechSynthesis.cancel();
 
-    const blueLight = new THREE.PointLight(0x00d9ff, 35, 20);
-    blueLight.position.set(2, 3, 4);
-    scene.add(blueLight);
+        const speech = new SpeechSynthesisUtterance(answer);
+        speech.lang = "uz-UZ";
+        speech.rate = 1;
+        speech.pitch = 1;
 
-    const purpleLight = new THREE.PointLight(0x7b2cff, 25, 20);
-    purpleLight.position.set(-3, -2, 3);
-    scene.add(purpleLight);
+        speech.onstart = () => {
+            document.getElementById("status").innerText =
+                "● JON AI GAPIRMOQDA";
 
-    const character = new THREE.Group();
-    scene.add(character);
+            document.getElementById("avatarBox")
+                .classList.add("talking");
+        };
 
-    // Kristall tanasi
-    const coreGeometry = new THREE.IcosahedronGeometry(1.15, 2);
-    const coreMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x087dff,
-      metalness: 0.55,
-      roughness: 0.12,
-      transmission: 0.25,
-      transparent: true,
-      opacity: 0.88,
-      emissive: 0x003bff,
-      emissiveIntensity: 1.2
-    });
+        speech.onend = () => {
+            document.getElementById("status").innerText =
+                "● ONLINE";
 
-    const core = new THREE.Mesh(coreGeometry, coreMaterial);
-    character.add(core);
+            document.getElementById("avatarBox")
+                .classList.remove("talking");
+        };
 
-    // Ichki energiya yadrosi
-    const inner = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.48, 1),
-      new THREE.MeshBasicMaterial({
-        color: 0x6ffaff,
-        wireframe: true
-      })
-    );
-    character.add(inner);
-
-    // Yorqin ko'zlar
-    const eyeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x9fffff
-    });
-
-    function createEye(x, y) {
-      const eye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.105, 20, 20),
-        eyeMaterial
-      );
-      eye.position.set(x, y, 0.92);
-      character.add(eye);
+        window.speechSynthesis.speak(speech);
     }
-
-    createEye(-0.34, 0.18);
-    createEye(0.34, 0.18);
-
-    // Gologramma halqalari
-    const rings = [];
-
-    for (let i = 0; i < 3; i++) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.55 + i * 0.18, 0.012, 8, 120),
-        new THREE.MeshBasicMaterial({
-          color: i === 1 ? 0x9b55ff : 0x00eaff,
-          transparent: true,
-          opacity: 0.8
-        })
-      );
-
-      ring.rotation.x = Math.PI / 2 + i * 0.45;
-      ring.rotation.y = i * 0.6;
-      character.add(ring);
-      rings.push(ring);
-    }
-
-    // Suzib yuruvchi kristallar
-    const crystals = [];
-
-    for (let i = 0; i < 8; i++) {
-      const crystal = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.12 + Math.random() * 0.1),
-        new THREE.MeshBasicMaterial({
-          color: i % 2 ? 0x00eaff : 0x9b55ff,
-          wireframe: true
-        })
-      );
-
-      const angle = i / 8 * Math.PI * 2;
-      crystal.position.set(
-        Math.cos(angle) * 2.1,
-        Math.sin(angle) * 1.5,
-        Math.sin(angle * 2) * 0.4
-      );
-
-      character.add(crystal);
-      crystals.push(crystal);
-    }
-
-    // Yulduzsimon zarrachalar
-    const particleGeometry = new THREE.BufferGeometry();
-    const particlePositions = [];
-
-    for (let i = 0; i < 450; i++) {
-      particlePositions.push(
-        (Math.random() - 0.5) * 12,
-        (Math.random() - 0.5) * 8,
-        (Math.random() - 0.5) * 7
-      );
-    }
-
-    particleGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(particlePositions, 3)
-    );
-
-    const particles = new THREE.Points(
-      particleGeometry,
-      new THREE.PointsMaterial({
-        color: 0x62eaff,
-        size: 0.025,
-        transparent: true,
-        opacity: 0.8
-      })
-    );
-
-    scene.add(particles);
-
-    // Animatsiya
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      const t = clock.getElapsedTime();
-
-      character.position.y = Math.sin(t * 1.4) * 0.16;
-      character.rotation.y = Math.sin(t * 0.5) * 0.35;
-      character.rotation.x = Math.sin(t * 0.7) * 0.08;
-
-      core.rotation.y += 0.003;
-      core.rotation.x += 0.002;
-      inner.rotation.y -= 0.012;
-      inner.rotation.x += 0.008;
-
-      rings.forEach((ring, i) => {
-        ring.rotation.z += 0.003 + i * 0.001;
-      });
-
-      crystals.forEach((crystal, i) => {
-        crystal.rotation.x += 0.012;
-        crystal.rotation.y += 0.009;
-        crystal.position.y += Math.sin(t * 1.5 + i) * 0.0015;
-      });
-
-      particles.rotation.y = t * 0.025;
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    window.addEventListener("resize", () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    });
     </script>
     </body>
     </html>
     """
 
-    components.html(html, height=520, scrolling=False)
+    html = html.replace(
+        "AVATAR_PLACEHOLDER", avatar_html
+    )
+
+    html = html.replace(
+        "ANSWER_PLACEHOLDER", answer_json
+    )
+
+    components.html(html, height=510, scrolling=False)
     
-def parse_slides(result):
+    def parse_slides(result):
     try:
         clean = result.strip()
         clean = clean.replace("```json", "").replace("```", "")
