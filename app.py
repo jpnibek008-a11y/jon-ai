@@ -788,5 +788,58 @@ def get_image(uploaded_file):
     except Exception as e:
         st.error(f"Rasmni yuklashda xatolik: {e}")
         return None
+        from openai import OpenAI
+import json
+import os
+
+client = OpenAI(api_key="YOUR_API_KEY")
+
+MEMORY_FILE = "ai_memory.json"
+
+# Xotirani yuklash
+def load_memory():
+    if os.path.exists(MEMORY_FILE):
+        with open(MEMORY_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+    return []
+
+# Xotirani saqlash
+def save_memory(memory):
+    with open(MEMORY_FILE, "w", encoding="utf-8") as file:
+        json.dump(memory, file, ensure_ascii=False, indent=4)
+
+memory = load_memory()
+
+# AI bilan suhbat
+def chat(user_message):
+    memory.append({
+        "role": "user",
+        "content": user_message
+    })
+
+    response = client.responses.create(
+        model="gpt-6",
+        input=memory
+    )
+
+    answer = response.output_text
+
+    memory.append({
+        "role": "assistant",
+        "content": answer
+    })
+
+    save_memory(memory)
+
+    return answer
+
+# Doimiy suhbat
+while True:
+    message = input("Siz: ")
+
+    if message.lower() == "exit":
+        break
+
+    print("AI:", chat(message))
         
         
