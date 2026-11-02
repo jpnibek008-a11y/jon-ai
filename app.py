@@ -266,8 +266,7 @@ def my_function():
     except Exception as e:
         st.error(f"JSON xatosi: {e}")
         return []
-
-
+    
 def create_presentation(topic, slides_data):
     prs = Presentation()
 
@@ -275,15 +274,6 @@ def create_presentation(topic, slides_data):
         slide = prs.slides.add_slide(
             prs.slide_layouts[1]
         )
-
-        slide.shapes.title.text = str(
-            item.get("title", topic)
-        )
-    def create_presentation(topic, slides_data):
-    prs = Presentation()
-
-    for item in slides_data:
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
 
         slide.shapes.title.text = str(
             item.get("title", topic)
@@ -307,9 +297,7 @@ def create_presentation(topic, slides_data):
     output.seek(0)
 
     return output
-
-
-pages = [
+    pages = [
     "🏠 Bosh sahifa",
     "🤖 AI Chat",
     "🎓 Ta'lim markazi",
