@@ -237,22 +237,22 @@ def show_character(answer=""):
     </body>
     </html>
     """
-
-    html = html.replace(
+ html = html.replace(
         "AVATAR_PLACEHOLDER", avatar_html
     )
 
     html = html.replace(
         "ANSWER_PLACEHOLDER", answer_json
     )
+html = html.replace(
+    "ANSWER_PLACEHOLDER", answer_json
+)
 
-    components.html(html, height=510, scrolling=False)
-    
-    def my_function():
+components.html(html, height=510, scrolling=False)
+
+
+def my_function():
     try:
-        # kodlar
-    except Exception as e:
-        st.error(f"Xatolik: {e}")
         clean = result.strip()
         clean = clean.replace("```json", "").replace("```", "")
         start = clean.find("[")
@@ -266,13 +266,10 @@ def show_character(answer=""):
     except Exception:
         return [
             {
-                "title": "Taqdimot",
-                "points": [result]
+                # Bu yerda eski kodingizdagi obyektlar qoladi
             }
         ]
-
-
-def create_presentation(topic, slides_data):
+    def create_presentation(topic, slides_data):
     prs = Presentation()
 
     for item in slides_data:
