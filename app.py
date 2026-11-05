@@ -88,78 +88,268 @@ def ask_ai(prompt, extra_context=""):
 # 4. PERSONAJ
 # ==================================
 
+
 def show_character(answer=""):
 
-    avatar = st.session_state.get("avatar")
+    import streamlit as st
+    import streamlit.components.v1 as components
+    import json
 
-    if avatar:
-        avatar_data = base64.b64encode(
-            avatar
-        ).decode("utf-8")
+    styles = {
+        "Hologramma": "#00dfff",
+        "Realistik robot": "#aabbd0",
+        "Multfilm uslubi": "#ffb6d9",
+        "Fantastik": "#a66cff"
+    }
 
-        avatar_html = f"""
-        <img src="data:image/png;base64,{avatar_data}"
-        style="
-        width:280px;
-        height:300px;
-        object-fit:contain;
-        filter:drop-shadow(0 0 25px #00aaff);
-        ">
-        """
-    else:
-        avatar_html = """
-        <div style="
-        font-size:150px;
-        padding:30px;
-        filter:drop-shadow(0 0 25px #008cff);
-        ">🤖</div>
-        """
+    if "character_style" not in st.session_state:
+        st.session_state.character_style = "Hologramma"
 
+    if "character_name" not in st.session_state:
+        st.session_state.character_name = "JON"
+
+    style = st.selectbox(
+        "🎭 JON AI ko‘rinishi",
+        list(styles.keys()),
+        key="character_style"
+    )
+
+    color = styles[style]
     name = st.session_state.character_name
 
-    st.markdown(
-        f"""
-        <div style="
-        background:radial-gradient(circle,#10285c,#030817);
-        border:1px solid #008cff;
-        border-radius:20px;
-        padding:20px;
-        text-align:center;
-        color:white;
-        ">
-        {avatar_html}
-        <h2 style="color:#00dfff">{name} AI</h2>
-        <p style="color:#00eaff">
-        ● ONLINE
-        </p>
-        <p>{st.session_state.character_style}</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    html = """
+    <div id="jon-panel">
+      <div id="jon-status">● ONLINE</div>
+      <canvas id="jon3d"></canvas>
+      <h2>JON AI</h2>
+      <p>Virtual yordamchingiz</p>
+      <div id="jon-message">Salom! Men JON AI man.</div>
+      <button id="speak">🔊 Gapirish</button>
+      <button id="listen">🎙 Mikrofon</button>
+      <div id="recognized">Ovozli buyruq shu yerda ko‘rinadi</div>
+    </div>
+
+    <style>
+    #jon-panel {
+      background:radial-gradient(circle,#12376c,#020817);
+      color:white;text-align:center;
+      border:2px solid COLOR;
+      border-radius:25px;padding:20px;
+    }
+    #jon3d {
+      width:100%;height:350px;
+      display:block;
+    }
+    #jon-panel h2 {color:COLOR;font-size:30px}
+    #jon-status {color:#00ff9d;font-weight:bold}
+    #jon-message {
+      background:#10264a;padding:15px;
+      border-radius:15px;margin:15px;
+    }
+    #jon-panel button {
+      background:#087edb;color:white;
+      border:0;border-radius:12px;
+      padding:12px;margin:5px;
+    }
+    #recognized {color:#9edfff;margin:12px}
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <script>
+    const color = "COLOR";
+    const canvas = document.getElementById("jon3d");
+
+    if (typeof THREE !== "undefined") {
+
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(
+        45, canvas.clientWidth / 350, 0.1, 100
+      );
+      camera.position.z = 5;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas:canvas, alpha:true, antialias:true
+      });
+
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      renderer.setSize(canvas.clientWidth,350);
+
+      scene.add(new THREE.AmbientLight(0xffffff,2));
+
+      const light = new THREE.PointLight(color,3);
+      light.position.set(2,3,4);
+      scene.add(light);
+
+      const jon = new THREE.Group();
+      scene.add(jon);
+
+      const material = new THREE.MeshStandardMaterial({
+        color:color,
+        metalness:0.5,
+        roughness:0.25
+      });
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8,32,32),
+        material
+      );
+      jon.add(head);
+
+      const eyeMaterial = new THREE.MeshStandardMaterial({
+        color:0xffffff,
+        emissive:color,
+        emissiveIntensity:2
+      });
+
+      const eyes = [];
+
+      [-0.3,0.3].forEach(x => {
+        const eye = new THREE.Mesh(
+          new THREE.SphereGeometry(0.09,16,16),
+          eyeMaterial
+        );
+        eye.position.set(x,0.12,0.7);
+        jon.add(eye);
+        eyes.push(eye);
+      });
+
+      const mouth = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3,0.04,0.04),
+        new THREE.MeshBasicMaterial({color:color})
+      );
+      mouth.position.set(0,-0.35,0.72);
+      jon.add(mouth);
+
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45,0.7,1,32),
+        material
+      );
+      body.position.y=-1.15;
+      jon.add(body);
+
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.25,0.025,12,100),
+        new THREE.MeshBasicMaterial({color:color})
+      );
+      ring.rotation.x=1.2;
+      jon.add(ring);
+
+      let talking=false;
+      let blink=0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        jon.rotation.y = Math.sin(Date.now()*0.0005)*0.15;
+        jon.position.y = Math.sin(Date.now()*0.002)*0.08;
+
+        ring.rotation.z += 0.008;
+
+        if(talking) {
+          mouth.scale.y = 1 + Math.abs(Math.sin(Date.now()*0.02))*7;
+        } else {
+          mouth.scale.y = 1;
+        }
+
+        blink++;
+
+        if(blink % 300 < 5) {
+          eyes.forEach(e => e.scale.y=0.1);
+        } else {
+          eyes.forEach(e => e.scale.y=1);
+        }
+
+        renderer.render(scene,camera);
+      }
+
+      animate();
+
+      window.jonTalk = function(text) {
+        if(!("speechSynthesis" in window)) {
+          document.getElementById("jon-message").innerText =
+            "Ovozli xizmat brauzerda qo‘llab-quvvatlanmaydi.";
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang="uz-UZ";
+        speech.rate=1;
+        speech.pitch=1;
+
+        talking=true;
+
+        speech.onend=()=>talking=false;
+        speech.onerror=()=>talking=false;
+
+        window.speechSynthesis.speak(speech);
+      };
+
+      document.getElementById("speak").onclick=()=>{
+        window.jonTalk("Salom! Men JON AI. Sizga qanday yordam beray?");
+      };
+
+      document.getElementById("listen").onclick=()=>{
+        const Recognition =
+          window.SpeechRecognition ||
+          window.webkitSpeechRecognition;
+
+        if(!Recognition) {
+          document.getElementById("recognized").innerText =
+            "Mikrofon orqali tanish brauzeringizda mavjud emas.";
+          return;
+        }
+
+        const recognition = new Recognition();
+        recognition.lang="uz-UZ";
+        recognition.interimResults=false;
+
+        recognition.onresult=(event)=>{
+          document.getElementById("recognized").innerText =
+            "Siz: " + event.results[0][0].transcript;
+        };
+
+        recognition.onerror=()=>{
+          document.getElementById("recognized").innerText =
+            "Mikrofon ishlamadi. Ruxsatni tekshiring.";
+        };
+
+        recognition.start();
+      };
+
+    } else {
+      document.getElementById("jon-message").innerText =
+        "3D kutubxonasi yuklanmadi.";
+    }
+    </script>
+    """
+
+    html = html.replace("COLOR", color)
+
+    components.html(html, height=570, scrolling=False)
 
     if answer:
         st.info(answer)
 
-        if st.button("🔊 Javobni eshitish"):
-            st.components.v1.html(
-                f"""
+        if st.button("🔊 AI javobini eshitish", key="jon_ai_voice"):
+            components.html(
+                """
                 <script>
-                const speech = new SpeechSynthesisUtterance(
-                    {json.dumps(answer, ensure_ascii=False)}
-                );
+                const text = """ + json.dumps(
+                    str(answer), ensure_ascii=False
+                ) + """;
+                const speech = new SpeechSynthesisUtterance(text);
                 speech.lang = "uz-UZ";
                 speechSynthesis.cancel();
                 speechSynthesis.speak(speech);
                 </script>
                 """,
-                height=0
+                height=50
             )
-
-
-# ==================================
-# 5. POWERPOINT JSON PARSER
-# ==================================
+            
 
 def parse_slides(result):
 
