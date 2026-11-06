@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import json
@@ -15,13 +14,13 @@ from pptx import Presentation
 # ==================================
 
 st.set_page_config(
-    page_title="JON AI 3.5",
+    page_title="JON AI LIVE",
     page_icon="💎",
     layout="wide"
 )
 
-APP_VERSION = "3.5"
-MODEL = "gemini-3.5-flash"
+APP_VERSION = "5.0"
+MODEL = "gemini-3.5-flash-lite"
 
 JON_CORE = """
 Sen JON AI 3.5 nomli aqlli virtual yordamchisan.
@@ -52,10 +51,15 @@ for key, value in defaults.items():
 # 3. GEMINI AI
 # ==================================
 
-def ask_ai(prompt, extra_context=""):
+def ask_ai(prompt, extra_context="", history=None):
 
-    api_key = st.session_state.get(
-        "api_key", ""
+    try:
+        saved_secret = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        saved_secret = ""
+
+    api_key = (
+        st.session_state.get("api_key", "") or saved_secret
     ).strip()
 
     if not api_key:
@@ -64,15 +68,23 @@ def ask_ai(prompt, extra_context=""):
     try:
         client = genai.Client(api_key=api_key)
 
+        conversation = []
+        for item in (history or [])[-12:]:
+            role = "Foydalanuvchi" if item.get("role") == "user" else "JON AI"
+            conversation.append(f"{role}: {item.get('content', '')}")
+
+        contents = (
+            JON_CORE
+            + "\n"
+            + ("\n".join(conversation) + "\n" if conversation else "")
+            + extra_context
+            + "\nFoydalanuvchi: "
+            + prompt
+        )
+
         response = client.models.generate_content(
             model=MODEL,
-            contents=(
-                JON_CORE
-                + "\n"
-                + extra_context
-                + "\n"
-                + prompt
-            )
+            contents=contents
         )
 
         if response.text:
@@ -87,281 +99,40 @@ def ask_ai(prompt, extra_context=""):
 # ==================================
 # 4. PERSONAJ
 # ==================================
-
-
-def show_character(answer=""):
-
-    import streamlit as st
-    import streamlit.components.v1 as components
-    import json
-
-    styles = {
-        "Hologramma": "#00dfff",
-        "Realistik robot": "#aabbd0",
-        "Multfilm uslubi": "#ffb6d9",
-        "Fantastik": "#a66cff"
-    }
-
-    if "character_style" not in st.session_state:
-        st.session_state.character_style = "Hologramma"
-
-    if "character_name" not in st.session_state:
-        st.session_state.character_name = "JON"
-
-    style = st.selectbox(
-        "🎭 JON AI ko‘rinishi",
-        list(styles.keys()),
-        key="character_style"
-    )
-
-    color = styles[style]
-    name = st.session_state.character_name
-
-    html = """
-    <div id="jon-panel">
-      <div id="jon-status">● ONLINE</div>
-      <canvas id="jon3d"></canvas>
-      <h2>JON AI</h2>
-      <p>Virtual yordamchingiz</p>
-      <div id="jon-message">Salom! Men JON AI man.</div>
-      <button id="speak">🔊 Gapirish</button>
-      <button id="listen">🎙 Mikrofon</button>
-      <div id="recognized">Ovozli buyruq shu yerda ko‘rinadi</div>
-    </div>
-
-    <style>
-    #jon-panel {
-      background:radial-gradient(circle,#12376c,#020817);
-      color:white;text-align:center;
-      border:2px solid COLOR;
-      border-radius:25px;padding:20px;
-    }
-    #jon3d {
-      width:100%;height:350px;
-      display:block;
-    }
-    #jon-panel h2 {color:COLOR;font-size:30px}
-    #jon-status {color:#00ff9d;font-weight:bold}
-    #jon-message {
-      background:#10264a;padding:15px;
-      border-radius:15px;margin:15px;
-    }
-    #jon-panel button {
-      background:#087edb;color:white;
-      border:0;border-radius:12px;
-      padding:12px;margin:5px;
-    }
-    #recognized {color:#9edfff;margin:12px}
-    </style>
-
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-    <script>
-    const color = "COLOR";
-    const canvas = document.getElementById("jon3d");
-
-    if (typeof THREE !== "undefined") {
-
-      const scene = new THREE.Scene();
-
-      const camera = new THREE.PerspectiveCamera(
-        45, canvas.clientWidth / 350, 0.1, 100
-      );
-      camera.position.z = 5;
-
-      const renderer = new THREE.WebGLRenderer({
-        canvas:canvas, alpha:true, antialias:true
-      });
-
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-      renderer.setSize(canvas.clientWidth,350);
-
-      scene.add(new THREE.AmbientLight(0xffffff,2));
-
-      const light = new THREE.PointLight(color,3);
-      light.position.set(2,3,4);
-      scene.add(light);
-
-      const jon = new THREE.Group();
-      scene.add(jon);
-
-      const material = new THREE.MeshStandardMaterial({
-        color:color,
-        metalness:0.5,
-        roughness:0.25
-      });
-
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.8,32,32),
-        material
-      );
-      jon.add(head);
-
-      const eyeMaterial = new THREE.MeshStandardMaterial({
-        color:0xffffff,
-        emissive:color,
-        emissiveIntensity:2
-      });
-
-      const eyes = [];
-
-      [-0.3,0.3].forEach(x => {
-        const eye = new THREE.Mesh(
-          new THREE.SphereGeometry(0.09,16,16),
-          eyeMaterial
-        );
-        eye.position.set(x,0.12,0.7);
-        jon.add(eye);
-        eyes.push(eye);
-      });
-
-      const mouth = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3,0.04,0.04),
-        new THREE.MeshBasicMaterial({color:color})
-      );
-      mouth.position.set(0,-0.35,0.72);
-      jon.add(mouth);
-
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.45,0.7,1,32),
-        material
-      );
-      body.position.y=-1.15;
-      jon.add(body);
-
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.25,0.025,12,100),
-        new THREE.MeshBasicMaterial({color:color})
-      );
-      ring.rotation.x=1.2;
-      jon.add(ring);
-
-      let talking=false;
-      let blink=0;
-
-      function animate() {
-        requestAnimationFrame(animate);
-
-        jon.rotation.y = Math.sin(Date.now()*0.0005)*0.15;
-        jon.position.y = Math.sin(Date.now()*0.002)*0.08;
-
-        ring.rotation.z += 0.008;
-
-        if(talking) {
-          mouth.scale.y = 1 + Math.abs(Math.sin(Date.now()*0.02))*7;
-        } else {
-          mouth.scale.y = 1;
-        }
-
-        blink++;
-
-        if(blink % 300 < 5) {
-          eyes.forEach(e => e.scale.y=0.1);
-        } else {
-          eyes.forEach(e => e.scale.y=1);
-        }
-
-        renderer.render(scene,camera);
+        stream = null;
+        const video = document.getElementById('camera');
+        video.srcObject = null;
+        video.style.display = 'none';
+        document.getElementById('camera-note').textContent = 'Kamera o‘chirildi.';
+      };
+      if(speakText) welcome.textContent = speakText;
+      if(!speakText) {
+        root.classList.add('dancing');
+        setTimeout(()=>root.classList.remove('dancing'),5000);
       }
-
-      animate();
-
-      window.jonTalk = function(text) {
-        if(!("speechSynthesis" in window)) {
-          document.getElementById("jon-message").innerText =
-            "Ovozli xizmat brauzerda qo‘llab-quvvatlanmaydi.";
-          return;
-        }
-
-        window.speechSynthesis.cancel();
-
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.lang="uz-UZ";
-        speech.rate=1;
-        speech.pitch=1;
-
-        talking=true;
-
-        speech.onend=()=>talking=false;
-        speech.onerror=()=>talking=false;
-
-        window.speechSynthesis.speak(speech);
-      };
-
-      document.getElementById("speak").onclick=()=>{
-        window.jonTalk("Salom! Men JON AI. Sizga qanday yordam beray?");
-      };
-
-      document.getElementById("listen").onclick=()=>{
-        const Recognition =
-          window.SpeechRecognition ||
-          window.webkitSpeechRecognition;
-
-        if(!Recognition) {
-          document.getElementById("recognized").innerText =
-            "Mikrofon orqali tanish brauzeringizda mavjud emas.";
-          return;
-        }
-
-        const recognition = new Recognition();
-        recognition.lang="uz-UZ";
-        recognition.interimResults=false;
-
-        recognition.onresult=(event)=>{
-          document.getElementById("recognized").innerText =
-            "Siz: " + event.results[0][0].transcript;
-        };
-
-        recognition.onerror=()=>{
-          document.getElementById("recognized").innerText =
-            "Mikrofon ishlamadi. Ruxsatni tekshiring.";
-        };
-
-        recognition.start();
-      };
-
-    } else {
-      document.getElementById("jon-message").innerText =
-        "3D kutubxonasi yuklanmadi.";
-    }
+      let blinkTimer=setInterval(()=> {
+        root.classList.add('blink');
+        setTimeout(()=>root.classList.remove('blink'),160);
+      },4200);
+      window.addEventListener('beforeunload',()=>clearInterval(blinkTimer));
+    })();
     </script>
     """
 
-    html = html.replace("COLOR", color)
+    html = (html.replace("__COLOR__", color)
+                .replace("__NAME__", name)
+                .replace("__ANSWER__", json.dumps(str(spoken_text), ensure_ascii=False)))
 
-    components.html(html, height=570, scrolling=False)
+    components.html(html, height=760, scrolling=False)
 
     if answer:
         st.info(answer)
 
-        if st.button("🔊 AI javobini eshitish", key="jon_ai_voice"):
-            components.html(
-                """
-                <script>
-                const text = """ + json.dumps(
-                    str(answer), ensure_ascii=False
-                ) + """;
-                const speech = new SpeechSynthesisUtterance(text);
-                speech.lang = "uz-UZ";
-                speechSynthesis.cancel();
-                speechSynthesis.speak(speech);
-                </script>
-                """,
-                height=50
-            )
-            
 
 def parse_slides(result):
-
     try:
         clean = result.strip()
-
-        clean = re.sub(
-            r"```(?:json)?",
-            "",
-            clean
-        )
-
+        clean = re.sub(r"```(?:json)?", "", clean)
         clean = clean.replace("```", "").strip()
 
         start = clean.find("[")
@@ -387,21 +158,16 @@ def parse_slides(result):
 # ==================================
 
 def create_presentation(topic, slides_data):
-
     prs = Presentation()
 
     for item in slides_data:
-
-        slide = prs.slides.add_slide(
-            prs.slide_layouts[1]
-        )
+        slide = prs.slides.add_slide(prs.slide_layouts[1])
 
         slide.shapes.title.text = str(
             item.get("title", topic)
         )
 
         body = slide.placeholders[1].text_frame
-
         points = item.get("points", [])
 
         if isinstance(points, str):
@@ -410,20 +176,100 @@ def create_presentation(topic, slides_data):
         body.text = ""
 
         for point in points:
-
             paragraph = body.add_paragraph()
             paragraph.text = str(point)
             paragraph.level = 0
 
     output = BytesIO()
-
     prs.save(output)
     output.seek(0)
 
     return output
+          document.getElementById('camera-off').onclick=()=> {
+        if(stream) stream.getTracks().forEach(t=>t.stop());
+        stream = null;
+        const video = document.getElementById('camera');
+        video.srcObject = null;
+        video.style.display = 'none';
+        document.getElementById('camera-note').textContent = 'Kamera o‘chirildi.';
+      };
+      if(speakText) welcome.textContent = speakText;
+      if(!speakText) {
+        root.classList.add('dancing');
+        setTimeout(()=>root.classList.remove('dancing'),5000);
+      }
+      let blinkTimer=setInterval(()=> {
+        root.classList.add('blink');
+        setTimeout(()=>root.classList.remove('blink'),160);
+      },4200);
+      window.addEventListener('beforeunload',()=>clearInterval(blinkTimer));
+    })();
+    </script>
+    """
+
+    html = (html.replace("__COLOR__", color)
+                .replace("__NAME__", name)
+                .replace("__ANSWER__", json.dumps(str(spoken_text), ensure_ascii=False)))
+
+    components.html(html, height=760, scrolling=False)
+
+    if answer:
+        st.info(answer)
 
 
-# ==================================
+def parse_slides(result):
+    try:
+        clean = result.strip()
+        clean = re.sub(r"```(?:json)?", "", clean)
+        clean = clean.replace("```", "").strip()
+
+        start = clean.find("[")
+        end = clean.rfind("]") + 1
+
+        if start == -1 or end == 0:
+            raise ValueError("JSON massiv topilmadi")
+
+        data = json.loads(clean[start:end])
+
+        if not isinstance(data, list):
+            raise ValueError("Natija ro'yxat emas")
+
+        return data
+
+    except Exception as e:
+        st.error(f"JSON xatosi: {e}")
+        return []
+
+
+def create_presentation(topic, slides_data):
+    prs = Presentation()
+
+    for item in slides_data:
+        slide = prs.slides.add_slide(prs.slide_layouts[1])
+
+        slide.shapes.title.text = str(
+            item.get("title", topic)
+        )
+
+        body = slide.placeholders[1].text_frame
+        points = item.get("points", [])
+
+        if isinstance(points, str):
+            points = [points]
+
+        body.text = ""
+
+        for point in points:
+            paragraph = body.add_paragraph()
+            paragraph.text = str(point)
+            paragraph.level = 0
+
+    output = BytesIO()
+    prs.save(output)
+    output.seek(0)
+
+    return output
+    # ==================================
 # 7. SIDEBAR
 # ==================================
 
@@ -442,7 +288,7 @@ pages = [
     "💎 Premium"
 ]
 
-st.sidebar.title("💎 JON AI 3.5")
+st.sidebar.title("💎 JON AI 5.0")
 st.sidebar.caption("Virtual Intelligence System")
 
 page = st.sidebar.radio(
@@ -450,24 +296,14 @@ page = st.sidebar.radio(
     pages
 )
 
-st.sidebar.divider()
-
-st.sidebar.caption(
-    "JON AI 3.5 | 2026"
-)
-
-
 # ==================================
 # 8. BOSH SAHIFA
 # ==================================
 
 if page == "🏠 Bosh sahifa":
 
-    st.title("💎 JON AI 3.5")
-
-    st.caption(
-        "Sizning shaxsiy virtual yordamchingiz"
-    )
+    st.title("💎 JON AI LIVE")
+    st.caption("Sizning shaxsiy virtual yordamchingiz")
 
     show_character()
 
@@ -490,16 +326,12 @@ elif page == "🤖 AI Chat":
     st.title("🤖 JON AI — Aqlli suhbat")
 
     for message in st.session_state.messages:
-
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input(
-        "JON AI ga xabar yozing..."
-    )
+    prompt = st.chat_input("JON AI ga xabar yozing...")
 
     if prompt:
-
         st.session_state.messages.append({
             "role": "user",
             "content": prompt
@@ -509,11 +341,11 @@ elif page == "🤖 AI Chat":
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-
             with st.spinner("JON AI javob tayyorlamoqda..."):
-
-                answer = ask_ai(prompt)
-
+                answer = ask_ai(
+                    prompt,
+                    history=st.session_state.messages[:-1]
+                )
                 st.markdown(answer)
 
         st.session_state.messages.append({
@@ -551,75 +383,61 @@ elif page == "🎓 Ta'lim markazi":
     )
 
     if st.button("📚 Tushuntirish"):
-
         if question:
-
             with st.spinner("Tayyorlanmoqda..."):
-
                 answer = ask_ai(
                     question,
-                    "Fan: " + subject +
-                    ". Mavzuni o'quvchiga sodda tushuntir."
+                    extra_context=f"Fan: {subject}"
                 )
-
-                st.markdown(answer)
-
+            st.markdown(answer)
         else:
-            st.warning("Avval savol yozing.")
-
-
-# ==================================
+            st.warning("Avval savolingizni yozing.")
+            # ==================================
 # 11. POWERPOINT
 # ==================================
 
 elif page == "📊 PowerPoint":
 
-    st.title("📊 JON AI — PowerPoint yaratuvchi")
+    st.title("📊 JON AI — PowerPoint yaratish")
 
     topic = st.text_input(
-        "Taqdimot mavzusi"
+        "Prezentatsiya mavzusi"
     )
 
     slide_count = st.slider(
         "Slaydlar soni",
-        3, 15, 6
+        3, 15, 7
     )
 
-    if st.button("✨ Taqdimot yaratish"):
+    if st.button("✨ Prezentatsiya yaratish"):
 
         if topic:
+            with st.spinner("Slaydlar tayyorlanmoqda..."):
 
-            prompt = (
-                "Mavzu: " + topic +
-                ". " + str(slide_count) +
-                " ta slayd tayyorla. "
-                "Faqat JSON massiv qaytar. "
-                'Har bir elementda "title" va "points" bo\'lsin. '
-                "points ro'yxat ko'rinishida bo'lsin."
-            )
+                prompt = f"""
+                {topic} mavzusida {slide_count} ta slayd
+                uchun JSON formatida ma'lumot yarat.
 
-            with st.spinner("Taqdimot tayyorlanmoqda..."):
+                Har bir elementda:
+                title va points bo'lsin.
+                Faqat JSON massiv qaytar.
+                """
 
                 result = ask_ai(prompt)
+                slides = parse_slides(result)
 
-                slides_data = parse_slides(result)
-
-                if slides_data:
-
+                if slides:
                     pptx_file = create_presentation(
                         topic,
-                        slides_data
+                        slides
                     )
-
-                    st.success("Taqdimot tayyor!")
 
                     st.download_button(
-                        "⬇️ PowerPoint yuklab olish",
+                        "📥 PowerPoint yuklab olish",
                         data=pptx_file,
-                        file_name="JON_AI_Taqdimot.pptx",
+                        file_name="JON_AI_Presentation.pptx",
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
                     )
-
         else:
             st.warning("Mavzuni kiriting.")
 
@@ -630,60 +448,38 @@ elif page == "📊 PowerPoint":
 
 elif page == "🌐 Tarjimon":
 
-    st.title("🌐 JON AI — Universal tarjimon")
+    st.title("🌐 JON AI — Tarjimon")
 
-    source_lang = st.selectbox(
-        "Matn qaysi tilda?",
-        [
-            "Avtomatik aniqlash",
-            "O'zbek",
-            "English",
-            "Русский",
-            "Turk",
-            "Arab",
-            "Nemis",
-            "Fransuz"
-        ]
+    source_language = st.selectbox(
+        "Qaysi tildan?",
+        ["Avtomatik aniqlash", "O'zbek", "Ingliz", "Rus", "Turk"]
     )
 
-    target_lang = st.selectbox(
-        "Qaysi tilga tarjima qilinsin?",
-        [
-            "O'zbek",
-            "English",
-            "Русский",
-            "Turk",
-            "Arab",
-            "Nemis",
-            "Fransuz"
-        ]
+    target_language = st.selectbox(
+        "Qaysi tilga?",
+        ["O'zbek", "Ingliz", "Rus", "Turk"]
     )
 
-    text_to_translate = st.text_area(
+    text_input = st.text_area(
         "Tarjima qilinadigan matn"
     )
 
-    if st.button("🌐 Tarjima qilish"):
+    if st.button("🌍 Tarjima qilish"):
 
-        if text_to_translate:
-
-            prompt = (
-                "Quyidagi matnni "
-                + source_lang
-                + " tilidan "
-                + target_lang
-                + " tiliga tarjima qil. "
-                "Faqat tarjimani chiqar:\n"
-                + text_to_translate
-            )
-
+        if text_input:
             with st.spinner("Tarjima qilinmoqda..."):
 
-                translated = ask_ai(prompt)
+                translation = ask_ai(
+                    text_input,
+                    extra_context=f"""
+                    Matnni {source_language} tilidan
+                    {target_language} tiliga tarjima qil.
+                    Faqat tarjimani qaytar.
+                    """
+                )
 
-                st.markdown("### Natija")
-                st.write(translated)
-
+            st.success("Tarjima tayyor!")
+            st.write(translation)
         else:
             st.warning("Matn kiriting.")
 
@@ -694,7 +490,7 @@ elif page == "🌐 Tarjimon":
 
 elif page == "🎨 Rasm prompti":
 
-    st.title("🎨 JON AI — Rasm prompti")
+    st.title("🎨 AI rasm g'oyasi")
 
     idea = st.text_area(
         "Qanday rasm yaratmoqchisiz?"
@@ -705,43 +501,42 @@ elif page == "🎨 Rasm prompti":
         [
             "Realistik",
             "3D",
-            "Multfilm",
             "Anime",
-            "Kiberpank",
-            "Fantastik"
+            "Kinematik",
+            "Fantastik",
+            "Minimalistik"
         ]
     )
 
-    if st.button("✨ Prompt yaratish"):
+    if st.button("🎨 Prompt yaratish"):
 
         if idea:
+            with st.spinner("Prompt tayyorlanmoqda..."):
 
-            prompt = (
-                "Quyidagi g'oya uchun batafsil "
-                "rasm prompti yoz. Uslub: "
-                + style
-                + ". G'oya: "
-                + idea
+                result = ask_ai(
+                    idea,
+                    extra_context=f"""
+                    Ushbu g'oya uchun batafsil
+                    AI image generation prompt yoz.
+                    Uslub: {style}.
+                    """
+                )
+
+            st.markdown("### Tayyor prompt")
+            st.write(result)
+
+            st.button(
+                "📋 Nusxalash",
+                on_click=lambda: st.session_state.update(
+                    {"copied_prompt": result}
+                )
             )
 
-            with st.spinner("Prompt yaratilmoqda..."):
-
-                result = ask_ai(prompt)
-
-                st.markdown("### Tayyor prompt")
-                st.code(result)
-
-                st.button(
-                    "📋 Promptni nusxalash",
-                    on_click=st.toast,
-                    args=("Prompt tayyor!",)
-                )
+            st.caption("Promptni rasm yaratish vositasiga kiritishingiz mumkin.")
 
         else:
             st.warning("Rasm g'oyasini yozing.")
-
-
-# ==================================
+            # ==================================
 # 14. EXCEL TAHLIL
 # ==================================
 
@@ -751,53 +546,38 @@ elif page == "📈 Excel tahlil":
 
     uploaded_file = st.file_uploader(
         "Excel yoki CSV fayl yuklang",
-        type=["xlsx", "csv"]
+        type=["xlsx", "xls", "csv"]
     )
 
     if uploaded_file:
 
         try:
-
             if uploaded_file.name.endswith(".csv"):
                 df = pd.read_csv(uploaded_file)
             else:
                 df = pd.read_excel(uploaded_file)
 
-            st.success("Fayl muvaffaqiyatli ochildi!")
+            st.subheader("Ma'lumotlar")
+            st.dataframe(df, use_container_width=True)
 
-            st.dataframe(
-                df,
-                use_container_width=True
-            )
+            st.subheader("Umumiy ma'lumot")
+            st.write(df.describe(include="all"))
 
-            st.markdown("### Asosiy ma'lumotlar")
+            if st.button("🤖 AI orqali tahlil"):
 
-            st.write(
-                df.describe(include="all")
-            )
+                with st.spinner("Tahlil qilinmoqda..."):
 
-            question = st.text_input(
-                "Jadval haqida savolingiz"
-            )
+                    summary = df.head(30).to_string()
 
-            if st.button("📊 Tahlil qilish"):
-
-                if question:
-
-                    context = df.head(30).to_string()
-
-                    answer = ask_ai(
-                        question,
-                        "Jadval ma'lumotlari:\n" + context
+                    result = ask_ai(
+                        "Ushbu jadvalni tahlil qil.",
+                        extra_context=summary
                     )
 
-                    st.markdown(answer)
-
-                else:
-                    st.warning("Savol kiriting.")
+                st.markdown(result)
 
         except Exception as e:
-            st.error(f"Fayl xatosi: {e}")
+            st.error(f"Faylni o'qishda xatolik: {e}")
 
 
 # ==================================
@@ -806,34 +586,42 @@ elif page == "📈 Excel tahlil":
 
 elif page == "📝 Vazifalar":
 
-    st.title("📝 JON AI — Kunlik vazifalar")
+    st.title("📝 JON AI — Vazifalar")
 
-    new_task = st.text_input(
+    task = st.text_input(
         "Yangi vazifa"
     )
 
-    if st.button("➕ Vazifa qo'shish"):
+    if st.button("➕ Qo'shish"):
 
-        if new_task:
+        if task:
+            st.session_state.tasks.append({
+                "name": task,
+                "done": False
+            })
 
-            st.session_state.tasks.append(new_task)
             st.rerun()
 
-    st.markdown("### Vazifalar ro'yxati")
+    st.subheader("Vazifalar ro'yxati")
 
-    for i, task in enumerate(
-        st.session_state.tasks
-    ):
+    for i, item in enumerate(st.session_state.tasks):
 
-        st.checkbox(
-            task,
-            key=f"task_{i}"
-        )
+        col1, col2 = st.columns([4, 1])
 
-    if st.button("🗑️ Barcha vazifalarni tozalash"):
+        with col1:
+            checked = st.checkbox(
+                item["name"],
+                value=item["done"],
+                key=f"task_{i}"
+            )
 
-        st.session_state.tasks = []
-        st.rerun()
+            st.session_state.tasks[i]["done"] = checked
+
+        with col2:
+            if st.button("🗑️", key=f"delete_{i}"):
+
+                st.session_state.tasks.pop(i)
+                st.rerun()
 
 
 # ==================================
@@ -844,20 +632,27 @@ elif page == "📷 Kamera":
 
     st.title("📷 JON AI — Kamera")
 
-    photo = st.camera_input(
+    picture = st.camera_input(
         "Suratga olish"
     )
 
-    if photo:
+    if picture:
 
         st.image(
-            photo,
-            caption="Olingan surat",
+            picture,
+            caption="Yuklangan surat",
             use_container_width=True
         )
 
+        st.success("Surat muvaffaqiyatli olindi!")
 
-# ==================================
+        if st.button("🤖 Surat haqida so'rash"):
+
+            st.info(
+                "Hozirgi versiyada suratni AI orqali "
+                "tahlil qilish funksiyasi ulanmagan."
+            )
+            # ==================================
 # 17. PERSONAJ
 # ==================================
 
@@ -865,45 +660,32 @@ elif page == "👤 Personaj":
 
     st.title("👤 JON AI — Personaj sozlamalari")
 
-    st.text_input(
+    st.session_state.character_name = st.text_input(
         "Personaj nomi",
-        key="character_name"
+        value=st.session_state.character_name
     )
 
-    st.selectbox(
-        "Tashqi ko'rinish",
+    st.session_state.character_style = st.selectbox(
+        "Personaj ko'rinishi",
         [
             "Hologramma",
             "Robot",
             "Multfilm uslubi",
             "Fantastik"
-        ],
-        key="character_style"
+        ]
     )
 
-    avatar = st.file_uploader(
-        "Personaj rasmi yuklash",
+    avatar_file = st.file_uploader(
+        "Personaj suratini yuklash",
         type=["png", "jpg", "jpeg"]
     )
 
-    if avatar:
-        st.session_state.avatar = avatar.getvalue()
+    if avatar_file:
+        st.session_state.avatar = avatar_file.getvalue()
+        st.image(st.session_state.avatar, width=200)
 
-    if st.session_state.avatar:
-
-        st.image(
-            st.session_state.avatar,
-            caption="Siz tanlagan personaj",
-            use_container_width=True
-        )
-
-    else:
-        show_character()
-
-    st.info(
-        "Personajning nomi, uslubi va rasmi "
-        "shu bo'limda sozlanadi."
-    )
+    if st.button("💾 Saqlash"):
+        st.success("Personaj sozlamalari saqlandi!")
 
 
 # ==================================
@@ -914,43 +696,26 @@ elif page == "⚙️ Sozlamalar":
 
     st.title("⚙️ JON AI — Sozlamalar")
 
-    st.markdown("### Gemini API")
-
-    api_input = st.text_input(
+    api_key = st.text_input(
         "Gemini API kaliti",
-        type="password",
-        value=st.session_state.api_key
+        value=st.session_state.api_key,
+        type="password"
     )
 
     if st.button("💾 API kalitini saqlash"):
 
-        st.session_state.api_key = api_input.strip()
+        st.session_state.api_key = api_key.strip()
+        st.success("API kaliti joriy sessiyada saqlandi!")
 
-        st.success("API kaliti saqlandi!")
+    if st.button("🧪 AI ni tekshirish"):
 
-    if st.button("🔄 API ulanishini tekshirish"):
-
-        if st.session_state.api_key:
+        with st.spinner("Tekshirilmoqda..."):
 
             result = ask_ai(
-                "Salom. Faqat OK deb javob ber."
+                "Salom! O'zingni qisqacha tanishtir."
             )
 
-            if result.startswith("Gemini xatoligi:"):
-                st.error(result)
-            elif result == "API kalitini Sozlamalardan kiriting.":
-                st.warning(result)
-            else:
-                st.success("API javob berdi!")
-                st.write(result)
-
-        else:
-            st.warning("API kalitini kiriting!")
-
-    st.divider()
-
-    st.write("Ilova versiyasi:", APP_VERSION)
-    st.write("Model:", MODEL)
+        st.write(result)
 
 
 # ==================================
@@ -959,32 +724,38 @@ elif page == "⚙️ Sozlamalar":
 
 elif page == "💎 Premium":
 
-    st.title("💎 JON AI Premium")
+    st.title("💎 JON AI PREMIUM")
 
-    st.subheader("Kelajakdagi imkoniyatlar")
+    st.subheader("Premium imkoniyatlar")
 
-    st.write("🚀 Kengaytirilgan AI imkoniyatlari")
-    st.write("🎭 Maxsus personaj sozlamalari")
-    st.write("🎙️ Ovozli yordamchi")
-    st.write("✨ Maxsus dizayn va effektlar")
-    st.write("📊 Kengaytirilgan tahlil")
+    st.write("""
+    - Kengaytirilgan AI suhbat
+    - Professional ta'lim yordami
+    - PowerPoint yaratish
+    - Excel tahlil
+    - Tarjima xizmatlari
+    - Kelajakda ovozli AI imkoniyatlari
+    """)
+
+    st.warning(
+        "Premium to'lov tizimi hali ulanmagan."
+    )
 
     st.info(
-        "Premium bo'limi hozircha namoyish uchun. "
-        "To'lov tizimi hali ulanmagan."
+        "Bu bo'lim hozircha ma'lumot uchun."
     )
 
 
 # ==================================
-# 20. FOOTER
+# 20. YAKUNIY MA'LUMOT
 # ==================================
 
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "💎 JON AI — Your Virtual Assistant"
+    f"JON AI VERSION {APP_VERSION}"
 )
 
 st.sidebar.caption(
-    "Powered by Google Gemini"
-)
+    "Created with Python and Streamlit"
+    )
