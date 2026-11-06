@@ -99,24 +99,59 @@ def ask_ai(prompt, extra_context="", history=None):
 # ==================================
 # 4. PERSONAJ
 # ==================================
-        stream = null;
-        const video = document.getElementById('camera');
-        video.srcObject = null;
-        video.style.display = 'none';
-        document.getElementById('camera-note').textContent = 'Kamera o‘chirildi.';
-      };
-      if(speakText) welcome.textContent = speakText;
-      if(!speakText) {
-        root.classList.add('dancing');
-        setTimeout(()=>root.classList.remove('dancing'),5000);
-      }
-      let blinkTimer=setInterval(()=> {
-        root.classList.add('blink');
-        setTimeout(()=>root.classList.remove('blink'),160);
-      },4200);
-      window.addEventListener('beforeunload',()=>clearInterval(blinkTimer));
-    })();
+
+def show_character(answer=""):
+
+    name = st.session_state.character_name
+
+    html = """
+    <html>
+    <body style="
+        background: #080b20;
+        color: #00eaff;
+        text-align: center;
+        font-family: Arial;
+        padding: 30px;
+        border-radius: 20px;
+    ">
+
+    <h1>🤖 JON AI</h1>
+
+    <div style="font-size:100px;">
+        💎
+    </div>
+
+    <h2>JON</h2>
+
+    <p>ONLINE</p>
+
+    <p>Virtual yordamchingiz tayyor!</p>
+
+    <script>
+    const root = document.body;
+
+    let blinkTimer = setInterval(() => {
+        root.style.opacity = "0.85";
+
+        setTimeout(() => {
+            root.style.opacity = "1";
+        }, 160);
+
+    }, 4200);
     </script>
+
+    </body>
+    </html>
+    """
+
+    components.html(
+        html,
+        height=350,
+        scrolling=False
+    )
+
+    if answer:
+        st.info(answer)
     """
 
     html = (html.replace("__COLOR__", color)
