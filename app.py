@@ -986,25 +986,21 @@ elif page == "📊 PowerPoint":
             with st.spinner(
                 "Slaydlar tayyorlanmoqda..."
             ):
+            result = ask_ai(prompt)
+            slides = parse_slides(result)
 
-                
+            if slides:
+                pptx_file = create_presentation(
+                    topic,
+                    slides
+                )
 
-                                    result = ask_ai(prompt)
-
-                slides = parse_slides(result)
-
-                if slides:
-                    pptx_file = create_presentation(
-                        topic,
-                        slides
-                    )
-
-                    st.download_button(
-                        label="📥 PowerPoint yuklab olish",
-                        data=pptx_file,
-                        file_name="JON_AI_Presentation.pptx",
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                    )
-                else:
-                    st.error("Slaydlar yaratilmadi. Qayta urinib ko‘ring.")
+                st.download_button(
+                    label="📥 PowerPoint yuklab olish",
+                    data=pptx_file,
+                    file_name="JON_AI_Presentation.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                )
+            else:
+                st.error("Slaydlar yaratilmadi. Qayta urinib ko‘ring.")
           
