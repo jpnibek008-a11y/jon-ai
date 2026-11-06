@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 APP_VERSION = "5.1"
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.5-flash"
 
 JON_CORE = """
 Sen JON AI nomli aqlli virtual yordamchisan.
