@@ -47,7 +47,6 @@ for key, value in DEFAULTS.items():
 
 
 # -------------------- AI ENGINE --------------------
-
 def get_api_key():
     key = st.session_state.get("api_key", "").strip()
 
@@ -64,10 +63,7 @@ def ask_ai(prompt, extra_context="", history=None):
     api_key = get_api_key()
 
     if not api_key:
-        return (
-            "Gemini API kaliti topilmadi. "
-            "Sozlamalar bo'limidan API kalitini kiriting."
-        )
+        return "Gemini API kaliti topilmadi. Sozlamalardan API kalitini kiriting."
 
     try:
         client = genai.Client(api_key=api_key)
@@ -85,27 +81,28 @@ def ask_ai(prompt, extra_context="", history=None):
                 f"{role}: {item.get('content', '')}"
             )
 
-        contents = (
-            JON_CORE
-            + "\n\n"
-            + (
-                "\n".join(history_lines) + "\n\n"
-                if history_lines else ""
-            )
-            + str(extra_context)
-            + "\n\nFoydalanuvchi: "
-            + str(prompt)
-        )
+        full_prompt = f"""
+Sen JON AI nomli professional sun'iy intellekt yordamchisisan.
+
+Qo'shimcha kontekst:
+{extra_context}
+
+Oldingi suhbat:
+{chr(10).join(history_lines)}
+
+Foydalanuvchining yangi savoli:
+{prompt}
+"""
 
         response = client.models.generate_content(
             model=MODEL,
-            contents=contents,
+            contents=full_prompt
         )
 
-        return response.text or "AI javob qaytarmadi."
+        return response.text or "JON AI javob yarata olmadi."
 
-    except Exception as exc:
-        return f"Gemini bilan bog'lanishda xatolik: {exc}"
+    except Exception as e:
+        return f"JON AI xatosi: {str(e)}"
 
 
 # -------------------- THREE.JS 3D PERSONAJ --------------------
