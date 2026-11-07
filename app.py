@@ -1263,12 +1263,7 @@ def parse_slides(result):
         )
 
         return []
-
-
-def create_presentation(
-    topic,
-    slides_data
-):
+def create_presentation(topic, slides_data):
 
     prs = Presentation()
 
@@ -1278,35 +1273,33 @@ def create_presentation(
             prs.slide_layouts[1]
         )
 
+        # Sarlavha
         slide.shapes.title.text = str(
-            item.get(
-                "title",
-                topic
-            )
+            item.get("title", topic)
         )
 
-        body = (
-            slide.placeholders[1]
-            .text_frame
-        )
-
+        # Asosiy matn
+        body = slide.placeholders[1].text_frame
         body.clear()
 
-        points = item.get(
-            "points",
-            []
-        )
+        points = item.get("points", [])
 
-        if isinstance(
-            points,
-            str
-        ):
+        if isinstance(points, str):
             points = [points]
 
-        for index, point in enumerate(
-            points
-        ):
+        for index, point in enumerate(points):
 
-            paragraph = (
-                body.paragraphs[0]
+            if index == 0:
+                paragraph = body.paragraphs[0]
+            else:
+                paragraph = body.add_paragraph()
+
+            paragraph.text = str(point)
+            paragraph.level = 0
+
+    output = BytesIO()
+    prs.save(output)
+    output.seek(0)
+
+    return output
   
