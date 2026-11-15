@@ -19,7 +19,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+st.title("JON AI — TEST")
+st.success("Streamlit Python kodi ishlayapti!")
 APP_VERSION = "5.2"
 MODEL = "gemini-3.5-flash"
 
