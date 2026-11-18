@@ -1109,4 +1109,4 @@ def render_education():
 
     question = st.text_area(
         "Mavzu yoki topshiriq",
-        placeholder="Masalan: Present Perfect mavzus
+        placeholder="Masalan: Present Perfect mavzusi"
