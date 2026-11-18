@@ -1098,7 +1098,7 @@ def render_education():
         ]
     )
 
-    level = st.selectbox(
+        level = st.selectbox(
         "Daraja",
         [
             "Boshlang‘ich",
@@ -1109,4 +1109,6 @@ def render_education():
 
     question = st.text_area(
         "Mavzu yoki topshiriq",
-        placeholder="Masalan: Present Perfect mavzusi"
+        placeholder="Masalan: Present Perfect mavzusini tushuntir",
+        height=120
+    )
