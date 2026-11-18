@@ -1086,8 +1086,7 @@ def render_education():
             "Boshqa fan"
         ]
     )
-
-    mode = st.selectbox(
+  mode = st.selectbox(
         "Yordam turi",
         [
             "Mavzuni tushuntirish",
@@ -1096,19 +1095,17 @@ def render_education():
             "Reja tuzish",
             "Mashq yaratish"
         ]
-    )
-
-        level = st.selectbox(
-        "Daraja",
-        [
-            "Boshlang‘ich",
-            "O‘rta",
-            "Yuqori"
-        ]
-    )
-
-    question = st.text_area(
-        "Mavzu yoki topshiriq",
-        placeholder="Masalan: Present Perfect mavzusini tushuntir",
-        height=120
-    )
+    )                                                                                  
+level = st.selectbox(
+    "Daraja",
+    [
+        "Boshlang‘ich",
+        "O‘rta",
+        "Yuqori"
+    ]
+)
+question = st.text_area(
+    "Mavzu yoki topshiriq",
+    placeholder="Masalan: Present Perfect mavzusini tushuntir",
+    height=120
+)
