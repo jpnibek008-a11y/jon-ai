@@ -1065,49 +1065,47 @@ def render_chat():
             "role":"assistant",
             "content":answer
         })
-
-
 # ============================================================
 # 8. TA’LIM MARKAZI
 # ============================================================
 
 def render_education():
-st.title("🎓 JON AI — Ta’lim markazi")
+    st.title("🎓 JON AI — Ta’lim markazi")
 
-topic = st.selectbox(
-    "Yo‘nalish",
-    [
-        "Ingliz tili",
-        "IELTS",
-        "Multilevel",
-        "Grammatika",
-        "Lug‘at",
-        "Boshqa fan"
-    ]
-)
+    topic = st.selectbox(
+        "Yo‘nalish",
+        [
+            "Ingliz tili",
+            "IELTS",
+            "Multilevel",
+            "Grammatika",
+            "Lug‘at",
+            "Boshqa fan"
+        ]
+    )
 
-mode = st.selectbox(
-    "Yordam turi",
-    [
-        "Mavzuni tushuntirish",
-        "Test tuzish",
-        "Javoblarni tekshirish",
-        "Reja tuzish",
-        "Mashq yaratish"
-    ]
-)
+    mode = st.selectbox(
+        "Yordam turi",
+        [
+            "Mavzuni tushuntirish",
+            "Test tuzish",
+            "Javoblarni tekshirish",
+            "Reja tuzish",
+            "Mashq yaratish"
+        ]
+    )
 
-level = st.selectbox(
-    "Daraja",
-    [
-        "Boshlang‘ich",
-        "O‘rta",
-        "Yuqori"
-    ]
-)
+    level = st.selectbox(
+        "Daraja",
+        [
+            "Boshlang‘ich",
+            "O‘rta",
+            "Yuqori"
+        ]
+    )
 
-question = st.text_area(
-    "Mavzu yoki topshiriq",
-    placeholder="Masalan: Present Perfect mavzusini tushuntir",
-    height=120
-)
+    question = st.text_area(
+        "Mavzu yoki topshiriq",
+        placeholder="Masalan: Present Perfect mavzusini tushuntir",
+        height=120
+    )
