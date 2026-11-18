@@ -1,6 +1,12 @@
+# ============================================================
+# JON AI LIVE 6.0 — YAXLIT BIR FAYLLI VERSIYA
+# Streamlit + Gemini AI + Three.js 3D Character
+# ============================================================
+
 import json
 import re
 from io import BytesIO
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -10,7 +16,7 @@ from pptx import Presentation
 
 
 # ============================================================
-# JON AI LIVE 5.2
+# 1. ASOSIY SOZLAMALAR
 # ============================================================
 
 st.set_page_config(
@@ -19,36 +25,37 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-st.title("JON AI — TEST")
-st.success("Streamlit Python kodi ishlayapti!")
-APP_VERSION = "5.2"
-MODEL = "gemini-3.5-flash"
 
+APP_VERSION = "6.0"
+MODEL = "gemini-2.5-flash"
 
-# ============================================================
-# JON AI CORE
-# ============================================================
+PAGES = [
+    "🏠 Bosh sahifa",
+    "🤖 AI Chat",
+    "🎓 Ta'lim markazi",
+    "📊 PowerPoint",
+    "🌐 Tarjimon",
+    "🎨 Rasm prompti",
+    "📈 Excel tahlil",
+    "📝 Vazifalar",
+    "📷 Kamera",
+    "👤 Personaj",
+    "⚙️ Sozlamalar",
+    "💎 Premium",
+]
 
 JON_CORE = """
-Sen JON AI nomli aqlli virtual yordamchisan.
+Sen JON AI nomli professional virtual yordamchisan.
 
-Foydalanuvchiga o'zbek tilida ravon, aniq va hurmat bilan javob ber.
-
-Ta'lim, tarjima, dasturlash, tahlil va ijodiy vazifalarda yordam ber.
-
-Agar foydalanuvchi boshqa tilda so'rasa, o'sha tilni ham tushunib javob ber.
-
-Agar ishonching komil bo'lmasa, buni ochiq ayt.
-
-Ma'lumotni to'qib chiqarma.
-
-JON AI professional, foydali va tushunarli yordamchi sifatida ishlaydi.
+Asosiy til — o‘zbek tili.
+Foydalanuvchi boshqa tilda yozsa, o‘sha tilda javob ber.
+Ravon, aniq, hurmatli va amaliy javob ber.
+Ma’lumotni to‘qib chiqarma.
+Ishonching komil bo‘lmasa, buni ochiq ayt.
+Murakkab vazifalarni bosqichma-bosqich tushuntir.
+Kod yozganda to‘liq va ishlatish mumkin bo‘lgan kod ber.
+Maxfiy kalitlar va parollarni so‘rama yoki oshkor qilma.
 """
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
 
 DEFAULTS = {
     "messages": [],
@@ -58,7 +65,9 @@ DEFAULTS = {
     "api_key": "",
     "api_input": "",
     "api_status": "",
-    "copied_prompt": "",
+    "selected_page": PAGES[0],
+    "last_translation": "",
+    "last_prompt": "",
 }
 
 for key, value in DEFAULTS.items():
@@ -67,198 +76,228 @@ for key, value in DEFAULTS.items():
 
 
 # ============================================================
-# API KEY
+# 2. DIZAYN
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: Inter, sans-serif;
+    }
+
+    .stApp {
+        background:
+        radial-gradient(
+            ellipse at 10% 0%,
+            rgba(22,85,130,.22),
+            transparent 38%
+        ),
+        linear-gradient(
+            145deg,
+            #07111f 0%,
+            #0a1425 52%,
+            #101329 100%
+        );
+        color: #edf5ff;
+    }
+
+    [data-testid="stHeader"] {
+        background: rgba(0,0,0,0);
+    }
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #0b1729,
+            #10152b
+        );
+        border-right: 1px solid rgba(88,190,255,.18);
+    }
+
+    .block-container {
+        padding-top: 1.6rem;
+        padding-bottom: 2.5rem;
+        max-width: 1400px;
+    }
+
+    .jon-hero {
+        padding: 30px;
+        border-radius: 24px;
+        border: 1px solid rgba(83,205,255,.25);
+        background: linear-gradient(
+            120deg,
+            rgba(20,69,111,.62),
+            rgba(38,31,83,.45)
+        );
+        box-shadow: 0 12px 45px rgba(0,0,0,.18);
+    }
+
+    .jon-hero h1 {
+        font-size: clamp(30px,5vw,52px);
+        margin: 0;
+        color: #eafaff;
+    }
+
+    .jon-hero p {
+        color: #a9c6e5;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    .jon-card {
+        border: 1px solid rgba(110,190,255,.18);
+        background: rgba(17,35,59,.58);
+        padding: 18px;
+        border-radius: 18px;
+        min-height: 120px;
+    }
+
+    .jon-muted {
+        color: #9db5d0;
+    }
+
+    div.stButton > button {
+        border-radius: 12px;
+        border: 1px solid rgba(95,195,255,.28);
+        min-height: 42px;
+        font-weight: 600;
+    }
+
+    div[data-testid="stChatMessage"] {
+        border: 1px solid rgba(100,170,230,.12);
+        border-radius: 15px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# 3. GEMINI API
 # ============================================================
 
 def get_api_key():
-    """
-    API kalitini quyidagi tartibda qidiradi:
-
-    1. Session State
-    2. Streamlit Secrets
-    """
-
-    # 1. Session State
-    key = st.session_state.get("api_key", "")
+    key = str(
+        st.session_state.get("api_key", "")
+    ).strip()
 
     if key:
-        key = str(key).strip()
+        return key
 
-        if key:
-            return key
-
-    # 2. Streamlit Secrets
     try:
-        secret_key = st.secrets.get("GEMINI_API_KEY", "")
-
-        if secret_key:
-            return str(secret_key).strip()
-
+        return str(
+            st.secrets.get("GEMINI_API_KEY", "")
+        ).strip()
     except Exception:
-        pass
-
-    return ""
+        return ""
 
 
-def save_api_key():
-    """
-    Inputdagi API kalitini session_state ichiga saqlaydi.
-    """
-
-    key = st.session_state.get("api_input", "")
-    key = str(key).strip()
+def get_client():
+    key = get_api_key()
 
     if not key:
-        st.session_state["api_key"] = ""
-        st.session_state["api_status"] = (
-            "❌ API kaliti kiritilmadi."
-        )
-        return
-
-    st.session_state["api_key"] = key
-
-    st.session_state["api_status"] = (
-        "✅ API kaliti saqlandi."
-    )
-
-
-def test_api_connection():
-    """
-    Gemini API bilan haqiqiy ulanishni tekshiradi.
-    """
-
-    api_key = get_api_key()
-
-    if not api_key:
-        st.session_state["api_status"] = (
-            "❌ API kaliti topilmadi."
-        )
-        return
-
-    try:
-        client = genai.Client(api_key=api_key)
-
-        response = client.models.generate_content(
-            model=MODEL,
-            contents="JON AI API ulanish test. Faqat OK deb javob ber."
+        raise RuntimeError(
+            "Gemini API kaliti topilmadi. "
+            "Sozlamalar bo‘limida kalitni kiriting."
         )
 
-        if response and response.text:
-            st.session_state["api_status"] = (
-                "🟢 Gemini API muvaffaqiyatli ulandi."
-            )
-        else:
-            st.session_state["api_status"] = (
-                "⚠️ API ulandi, lekin javob kelmadi."
-            )
+    return genai.Client(api_key=key)
 
-    except Exception as e:
-
-        error_text = str(e)
-
-        st.session_state["api_status"] = (
-            f"🔴 API xatoligi: {error_text}"
-        )
-
-
-# ============================================================
-# AI ENGINE
-# ============================================================
 
 def ask_ai(prompt, extra_context="", history=None):
-
-    api_key = get_api_key()
-
-    if not api_key:
-        return (
-            "❌ Gemini API kaliti topilmadi.\n\n"
-            "⚙️ Sozlamalar bo'limiga o'ting, "
-            "API kalitingizni kiriting va "
-            "**API kalitini saqlash** tugmasini bosing."
-        )
+    """
+    Gemini AI chaqiruvi.
+    Oxirgi 12 ta xabar suhbat konteksti sifatida uzatiladi.
+    """
 
     try:
-
-        client = genai.Client(
-            api_key=api_key
-        )
+        client = get_client()
 
         history_lines = []
 
         for item in (history or [])[-12:]:
-
             role = (
                 "Foydalanuvchi"
                 if item.get("role") == "user"
                 else "JON AI"
             )
 
-            content = item.get(
-                "content",
-                ""
-            )
+            content = str(
+                item.get("content", "")
+            )[:12000]
 
             history_lines.append(
                 f"{role}: {content}"
             )
 
-        history_text = "\n".join(
-            history_lines
-        )
-
         full_prompt = f"""
 {JON_CORE}
 
-Qo'shimcha kontekst:
+Qo‘shimcha kontekst:
 {extra_context}
 
 Oldingi suhbat:
-{history_text}
+{chr(10).join(history_lines)}
 
-Foydalanuvchining yangi savoli:
+Yangi topshiriq:
 {prompt}
 """
 
         response = client.models.generate_content(
             model=MODEL,
-            contents=full_prompt
+            contents=full_prompt,
         )
 
-        if response and response.text:
-            return response.text
+        answer = getattr(response, "text", None)
 
-        return (
-            "JON AI javob yarata olmadi."
+        if answer:
+            return answer.strip()
+
+        return "JON AI javob qaytara olmadi."
+
+    except Exception as exc:
+        return f"AI bilan ishlashda xatolik: {exc}"
+
+
+def test_api_connection():
+    try:
+        client = get_client()
+
+        response = client.models.generate_content(
+            model=MODEL,
+            contents="Faqat OK deb javob ber.",
         )
 
-    except Exception as e:
+        if getattr(response, "text", None):
+            st.session_state.api_status = (
+                "🟢 Gemini API muvaffaqiyatli ulandi."
+            )
+        else:
+            st.session_state.api_status = (
+                "⚠️ API javobi bo‘sh qaytdi."
+            )
 
-        return (
-            "🔴 JON AI API xatosi:\n\n"
-            f"{str(e)}"
+    except Exception as exc:
+        st.session_state.api_status = (
+            f"🔴 Ulanish xatosi: {exc}"
         )
 
 
 # ============================================================
-# THREE.JS 3D PERSONAJ
+# 4. 3D JONLI PERSONAJ
 # ============================================================
 
-def show_character(
-    speaking=False,
-    height=520
-):
+def show_character(speaking=False, height=540):
 
-    name = str(
-        st.session_state.get(
-            "character_name",
-            "JON"
-        )
+    name = json.dumps(
+        str(st.session_state.character_name)
     )
 
-    style = st.session_state.get(
-        "character_style",
-        "Hologramma"
-    )
+    style = st.session_state.character_style
 
     style_map = {
         "Hologramma": "hologram",
@@ -273,168 +312,100 @@ def show_character(
         "hologram"
     )
 
-    safe_name = json.dumps(
-        name
+    speaking_js = (
+        "true" if speaking else "false"
     )
 
     html = r"""
-<!DOCTYPE html>
-
+<!doctype html>
 <html>
-
 <head>
-
 <meta charset="utf-8">
-
 <meta name="viewport"
-content="width=device-width, initial-scale=1">
+content="width=device-width,initial-scale=1">
 
 <style>
 
-html,
-body {
-
-    margin: 0;
-
-    width: 100%;
-
-    height: 100%;
-
-    overflow: hidden;
-
-    background:
-    radial-gradient(
-        ellipse at 50% 35%,
-        #142b52 0%,
-        #080d20 58%,
-        #030611 100%
-    );
-
-    font-family:
-    Arial,
-    sans-serif;
+html,body {
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#07101d;
+    font-family:Arial;
 }
-
 
 #stage {
-
-    position: relative;
-
-    width: 100%;
-
-    height: 100%;
-
-    min-height: 420px;
+    width:100%;
+    height:100%;
+    position:relative;
+    overflow:hidden;
+    border-radius:20px;
+    background:
+    radial-gradient(
+        ellipse at 50% 38%,
+        #19395d 0%,
+        #0b172b 58%,
+        #050a13 100%
+    );
 }
 
-
-#scene {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
+canvas {
+    width:100%;
+    height:100%;
+    display:block;
 }
 
-
-#hud {
-
-    position: absolute;
-
-    top: 15px;
-
-    left: 18px;
-
-    right: 18px;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    color: #8ff7ff;
-
-    font-size: 12px;
-
-    letter-spacing: 2px;
-
-    pointer-events: none;
-
-    text-shadow:
-    0 0 10px #00d9ff;
+.hud {
+    position:absolute;
+    top:15px;
+    left:18px;
+    right:18px;
+    display:flex;
+    justify-content:space-between;
+    color:#9cecff;
+    font-size:11px;
+    letter-spacing:2px;
+    pointer-events:none;
 }
-
 
 #name {
-
-    position: absolute;
-
-    bottom: 42px;
-
-    left: 0;
-
-    right: 0;
-
-    text-align: center;
-
-    color: #d9fbff;
-
-    font-size: 25px;
-
-    font-weight: bold;
-
-    letter-spacing: 8px;
-
-    text-shadow:
-    0 0 18px #00cfff;
+    position:absolute;
+    bottom:38px;
+    width:100%;
+    text-align:center;
+    color:#e1fbff;
+    font-size:23px;
+    font-weight:bold;
+    letter-spacing:7px;
+    text-shadow:0 0 15px #00dfff;
 }
-
 
 #status {
-
-    position: absolute;
-
-    bottom: 15px;
-
-    left: 0;
-
-    right: 0;
-
-    text-align: center;
-
-    color: #75e8ff;
-
-    font-size: 11px;
-
-    letter-spacing: 3px;
+    position:absolute;
+    bottom:13px;
+    width:100%;
+    text-align:center;
+    color:#75e8ff;
+    font-size:10px;
+    letter-spacing:3px;
 }
 
-
 </style>
-
 </head>
-
 
 <body>
 
 <div id="stage">
 
-    <div id="hud">
-
-        <span>JON AI LIVE</span>
-
+    <div class="hud">
+        <span>JON AI LIVE • 3D ENGINE</span>
         <span>● ONLINE</span>
-
     </div>
-
 
     <canvas id="scene"></canvas>
 
-
     <div id="name"></div>
-
 
     <div id="status">
         VIRTUAL INTELLIGENCE
@@ -442,771 +413,449 @@ body {
 
 </div>
 
-
-<script src="
-https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
-"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 
-(() => {
+(()=>{
 
-    const stage =
-        document.getElementById("stage");
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('scene');
 
-    const canvas =
-        document.getElementById("scene");
+const nameNode = document.getElementById('name');
+const status = document.getElementById('status');
 
-    const nameNode =
-        document.getElementById("name");
+nameNode.textContent = __NAME__;
 
-    const statusNode =
-        document.getElementById("status");
+const style = '__STYLE__';
+const speaking = __SPEAKING__;
 
+if(!window.THREE) {
+    status.textContent = '3D ENGINE YUKLANMADI';
+    return;
+}
 
-    const characterName =
-        __NAME__;
+const T = window.THREE;
 
-    const visualStyle =
-        "__STYLE__";
+const scene = new T.Scene();
 
-    const isSpeaking =
-        __SPEAKING__;
+const camera = new T.PerspectiveCamera(
+    38,
+    stage.clientWidth / stage.clientHeight,
+    0.1,
+    100
+);
 
+camera.position.set(0,0.1,8.2);
 
-    nameNode.textContent =
-        characterName;
+const renderer = new T.WebGLRenderer({
+    canvas,
+    antialias:true,
+    alpha:true
+});
 
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio || 1,1.7)
+);
 
-    if (!window.THREE) {
+renderer.setSize(
+    stage.clientWidth,
+    stage.clientHeight
+);
 
-        statusNode.textContent =
-            "3D ENGINE YUKLANMADI";
+renderer.outputEncoding = T.sRGBEncoding;
 
-        return;
-    }
+const colors = {
+    hologram:0x31eaff,
+    robot:0xa8c9df,
+    human:0xffc49a,
+    cartoon:0xffb7e8,
+    fantasy:0xb99aff
+};
 
+const accent = colors[style] || colors.hologram;
 
-    const THREE =
-        window.THREE;
+scene.add(
+    new T.AmbientLight(0x9bcfff,1.25)
+);
 
+const light = new T.PointLight(
+    accent,
+    2.8,
+    20
+);
 
-    const scene =
-        new THREE.Scene();
+light.position.set(3,3,5);
+scene.add(light);
 
+const fill = new T.PointLight(
+    0x287bff,
+    1.6,
+    16
+);
 
-    scene.fog =
-        new THREE.Fog(
-            0x071126,
-            8,
-            22
-        );
+fill.position.set(-3,-1,3);
+scene.add(fill);
 
+const character = new T.Group();
+scene.add(character);
 
-    const camera =
-        new THREE.PerspectiveCamera(
-            38,
-            stage.clientWidth /
-            stage.clientHeight,
-            0.1,
-            100
-        );
+const mat = (
+    color,
+    metal=.35,
+    rough=.3,
+    emissive=0
+) => new T.MeshStandardMaterial({
+    color,
+    metalness:metal,
+    roughness:rough,
+    emissive,
+    emissiveIntensity:
+        style === 'hologram' ? .4 : .12
+});
 
+const skinColor =
+    style === 'human' ? 0xe9ad89 :
+    style === 'cartoon' ? 0xffc4dc :
+    style === 'fantasy' ? 0xb9a0ff :
+    style === 'robot' ? 0x9eb7c9 :
+    0x55dff4;
 
-    camera.position.set(
-        0,
-        0.15,
-        8.2
+const skin = mat(skinColor,.4,.3,accent);
+const dark = mat(0x101b34,.7,.25);
+
+const glow = new T.MeshBasicMaterial({
+    color:accent
+});
+
+const white = new T.MeshStandardMaterial({
+    color:0xffffff
+});
+
+const black = new T.MeshBasicMaterial({
+    color:0x07101d
+});
+
+function sphere(parent,material,pos,scale) {
+
+    const m = new T.Mesh(
+        new T.SphereGeometry(1,32,24),
+        material
     );
 
+    m.position.set(...pos);
+    m.scale.set(...scale);
 
-    const renderer =
-        new THREE.WebGLRenderer({
-            canvas: canvas,
-            antialias: true,
-            alpha: true
-        });
+    parent.add(m);
+
+    return m;
+}
 
 
-    renderer.setPixelRatio(
-        Math.min(
-            window.devicePixelRatio || 1,
-            2
-        )
+// TANA
+
+sphere(
+    character,
+    dark,
+    [0,-1.45,0],
+    [.92,1.05,.48]
+);
+
+sphere(
+    character,
+    skin,
+    [0,-.78,.02],
+    [.86,.42,.48]
+);
+
+sphere(
+    character,
+    dark,
+    [-.82,-.95,0],
+    [.28,.72,.32]
+);
+
+sphere(
+    character,
+    dark,
+    [.82,-.95,0],
+    [.28,.72,.32]
+);
+
+sphere(
+    character,
+    skin,
+    [0,-.28,0],
+    [.28,.38,.3]
+);
+
+
+// BOSH
+
+const head = new T.Group();
+
+head.position.set(0,.62,0);
+
+character.add(head);
+
+sphere(
+    head,
+    skin,
+    [0,0,0],
+    [.72,.88,.58]
+);
+
+sphere(
+    head,
+    dark,
+    [0,.55,0],
+    [.76,.25,.61]
+);
+
+sphere(
+    head,
+    glow,
+    [0,.77,0],
+    [.18,.07,.12]
+);
+
+sphere(
+    head,
+    dark,
+    [-.72,-.02,0],
+    [.13,.25,.16]
+);
+
+sphere(
+    head,
+    dark,
+    [.72,-.02,0],
+    [.13,.25,.16]
+);
+
+
+// KO‘ZLAR
+
+const le = sphere(
+    head,
+    white,
+    [-.27,.08,.49],
+    [.16,.19,.075]
+);
+
+const re = sphere(
+    head,
+    white,
+    [.27,.08,.49],
+    [.16,.19,.075]
+);
+
+sphere(
+    head,
+    black,
+    [-.25,.07,.555],
+    [.075,.10,.035]
+);
+
+sphere(
+    head,
+    black,
+    [.29,.07,.555],
+    [.075,.10,.035]
+);
+
+
+// BURUN
+
+sphere(
+    head,
+    skin,
+    [0,-.12,.55],
+    [.075,.12,.08]
+);
+
+
+// OG‘IZ
+
+const mouth = sphere(
+    head,
+    black,
+    [0,-.34,.535],
+    [.19,.035,.035]
+);
+
+
+// KO‘K NUR
+
+sphere(
+    character,
+    glow,
+    [0,-1.25,.48],
+    [.16,.16,.06]
+);
+
+
+// HALQALAR
+
+const ringMat = new T.MeshBasicMaterial({
+    color:accent,
+    transparent:true,
+    opacity:.6
+});
+
+const ring1 = new T.Mesh(
+    new T.TorusGeometry(1.42,.012,8,100),
+    ringMat
+);
+
+ring1.rotation.x = 1.12;
+ring1.position.y = -.55;
+
+character.add(ring1);
+
+
+const ring2 = new T.Mesh(
+    new T.TorusGeometry(1.65,.008,8,100),
+    ringMat
+);
+
+ring2.rotation.x = 1.35;
+ring2.rotation.y = .55;
+ring2.position.y = -.55;
+
+character.add(ring2);
+
+
+// YULDUZLAR
+
+const positions = [];
+
+for(let i=0;i<140;i++) {
+
+    positions.push(
+        (Math.random()-.5)*9,
+        (Math.random()-.5)*6,
+        (Math.random()-.5)*4-1
     );
 
+}
 
-    renderer.setSize(
-        stage.clientWidth,
-        stage.clientHeight
-    );
+const geo = new T.BufferGeometry();
 
+geo.setAttribute(
+    'position',
+    new T.Float32BufferAttribute(positions,3)
+);
 
-    renderer.outputEncoding =
-        THREE.sRGBEncoding;
+const stars = new T.Points(
+    geo,
+    new T.PointsMaterial({
+        color:accent,
+        size:.025,
+        transparent:true,
+        opacity:.8
+    })
+);
 
+scene.add(stars);
 
-    const colors = {
 
-        hologram: 0x31eaff,
+// ANIMATSIYA
 
-        robot: 0xa8c9df,
+let blinkAt = 2;
+let blinkUntil = 0;
 
-        human: 0xffc49a,
+const clock = new T.Clock();
 
-        cartoon: 0xffb7e8,
+function resize() {
 
-        fantasy: 0xb99aff
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
 
-    };
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
 
+    renderer.setSize(w,h);
 
-    const accent =
-        colors[visualStyle]
-        || colors.hologram;
+}
 
+window.addEventListener('resize',resize);
 
-    scene.add(
-        new THREE.AmbientLight(
-            0x9bcfff,
-            1.2
-        )
-    );
 
+function animate() {
 
-    const keyLight =
-        new THREE.PointLight(
-            accent,
-            2.6,
-            18
-        );
+    requestAnimationFrame(animate);
 
+    const t = clock.getElapsedTime();
 
-    keyLight.position.set(
-        3,
-        3,
-        5
-    );
+    character.position.y =
+        Math.sin(t*1.35)*.07;
 
+    character.rotation.y =
+        Math.sin(t*.55)*.13;
 
-    scene.add(
-        keyLight
-    );
+    head.rotation.y =
+        Math.sin(t*.8)*.08;
 
+    head.rotation.x =
+        Math.sin(t*.65)*.035;
 
-    const fillLight =
-        new THREE.PointLight(
-            0x287bff,
-            1.7,
-            16
-        );
+    ring1.rotation.z += .003;
+    ring2.rotation.z -= .002;
 
+    stars.rotation.y += .0005;
 
-    fillLight.position.set(
-        -3,
-        -1,
-        3
-    );
+    if(t > blinkAt) {
 
+        blinkUntil = t+.14;
 
-    scene.add(
-        fillLight
-    );
-
-
-    const character =
-        new THREE.Group();
-
-
-    scene.add(
-        character
-    );
-
-
-    function mat(
-        color,
-        metalness = 0.35,
-        roughness = 0.3,
-        emissive = 0x000000
-    ) {
-
-        return new THREE.MeshStandardMaterial({
-
-            color: color,
-
-            metalness:
-                metalness,
-
-            roughness:
-                roughness,
-
-            emissive:
-                emissive,
-
-            emissiveIntensity:
-                visualStyle === "hologram"
-                ? 0.45
-                : 0.12
-
-        });
-
-    }
-
-
-    const skinColor =
-        visualStyle === "human"
-        ? 0xe9ad89
-        : visualStyle === "cartoon"
-        ? 0xffc4dc
-        : visualStyle === "fantasy"
-        ? 0xb9a0ff
-        : visualStyle === "robot"
-        ? 0x9eb7c9
-        : 0x55dff4;
-
-
-    const skin =
-        mat(
-            skinColor,
-            0.45,
-            0.28,
-            accent
-        );
-
-
-    const dark =
-        mat(
-            0x101b34,
-            0.7,
-            0.25
-        );
-
-
-    const glow =
-        new THREE.MeshBasicMaterial({
-            color: accent
-        });
-
-
-    const white =
-        new THREE.MeshStandardMaterial({
-            color: 0xffffff,
-            roughness: 0.2
-        });
-
-
-    const black =
-        new THREE.MeshBasicMaterial({
-            color: 0x07101d
-        });
-
-
-    function sphere(
-        parent,
-        material,
-        position,
-        scale
-    ) {
-
-        const mesh =
-            new THREE.Mesh(
-                new THREE.SphereGeometry(
-                    1,
-                    32,
-                    24
-                ),
-                material
-            );
-
-
-        mesh.position.set(
-            ...position
-        );
-
-
-        mesh.scale.set(
-            ...scale
-        );
-
-
-        parent.add(
-            mesh
-        );
-
-
-        return mesh;
-
-    }
-
-
-    // TANA
-
-    sphere(
-        character,
-        dark,
-        [0, -1.45, 0],
-        [0.92, 1.05, 0.48]
-    );
-
-
-    sphere(
-        character,
-        skin,
-        [0, -0.78, 0.02],
-        [0.86, 0.42, 0.48]
-    );
-
-
-    // YELKALAR
-
-    sphere(
-        character,
-        dark,
-        [-0.82, -0.95, 0],
-        [0.28, 0.72, 0.32]
-    );
-
-
-    sphere(
-        character,
-        dark,
-        [0.82, -0.95, 0],
-        [0.28, 0.72, 0.32]
-    );
-
-
-    // BO'YIN
-
-    sphere(
-        character,
-        skin,
-        [0, -0.28, 0],
-        [0.28, 0.38, 0.3]
-    );
-
-
-    // BOSH
-
-    const head =
-        new THREE.Group();
-
-
-    head.position.set(
-        0,
-        0.62,
-        0
-    );
-
-
-    character.add(
-        head
-    );
-
-
-    sphere(
-        head,
-        skin,
-        [0, 0, 0],
-        [0.72, 0.88, 0.58]
-    );
-
-
-    // SOCH / QOPQOQ
-
-    sphere(
-        head,
-        dark,
-        [0, 0.55, 0],
-        [0.76, 0.25, 0.61]
-    );
-
-
-    sphere(
-        head,
-        glow,
-        [0, 0.77, 0],
-        [0.18, 0.07, 0.12]
-    );
-
-
-    // QULOQLAR
-
-    sphere(
-        head,
-        dark,
-        [-0.72, -0.02, 0],
-        [0.13, 0.25, 0.16]
-    );
-
-
-    sphere(
-        head,
-        dark,
-        [0.72, -0.02, 0],
-        [0.13, 0.25, 0.16]
-    );
-
-
-    // KO'ZLAR
-
-    const leftEye =
-        sphere(
-            head,
-            white,
-            [-0.27, 0.08, 0.49],
-            [0.16, 0.19, 0.075]
-        );
-
-
-    const rightEye =
-        sphere(
-            head,
-            white,
-            [0.27, 0.08, 0.49],
-            [0.16, 0.19, 0.075]
-        );
-
-
-    sphere(
-        head,
-        black,
-        [-0.25, 0.07, 0.555],
-        [0.075, 0.10, 0.035]
-    );
-
-
-    sphere(
-        head,
-        black,
-        [0.29, 0.07, 0.555],
-        [0.075, 0.10, 0.035]
-    );
-
-
-    // BURUN
-
-    sphere(
-        head,
-        skin,
-        [0, -0.12, 0.55],
-        [0.075, 0.12, 0.08]
-    );
-
-
-    // OG'IZ
-
-    const mouth =
-        sphere(
-            head,
-            black,
-            [0, -0.34, 0.535],
-            [0.19, 0.035, 0.035]
-        );
-
-
-    // KO'KRAK MARKAZI
-
-    sphere(
-        character,
-        glow,
-        [0, -1.25, 0.48],
-        [0.16, 0.16, 0.06]
-    );
-
-
-    // HALQALAR
-
-    const ringMaterial =
-        new THREE.MeshBasicMaterial({
-            color: accent,
-            transparent: true,
-            opacity: 0.62
-        });
-
-
-    const ring1 =
-        new THREE.Mesh(
-            new THREE.TorusGeometry(
-                1.42,
-                0.012,
-                8,
-                100
-            ),
-            ringMaterial
-        );
-
-
-    ring1.rotation.x =
-        1.12;
-
-    ring1.position.y =
-        -0.55;
-
-    character.add(
-        ring1
-    );
-
-
-    const ring2 =
-        new THREE.Mesh(
-            new THREE.TorusGeometry(
-                1.65,
-                0.008,
-                8,
-                100
-            ),
-            ringMaterial
-        );
-
-
-    ring2.rotation.x =
-        1.35;
-
-    ring2.rotation.y =
-        0.55;
-
-    ring2.position.y =
-        -0.55;
-
-    character.add(
-        ring2
-    );
-
-
-    // YULDUZLAR
-
-    const starGeometry =
-        new THREE.BufferGeometry();
-
-
-    const starPositions = [];
-
-
-    for (
-        let i = 0;
-        i < 180;
-        i++
-    ) {
-
-        starPositions.push(
-            (Math.random() - 0.5) * 9,
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 4 - 1
-        );
+        blinkAt = t+3.2+Math.random()*2.2;
 
     }
 
+    const blink = t < blinkUntil;
 
-    starGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(
-            starPositions,
-            3
-        )
-    );
+    le.scale.y = blink ? .025 : .19;
+    re.scale.y = blink ? .025 : .19;
 
+    if(speaking) {
 
-    const stars =
-        new THREE.Points(
-            starGeometry,
-            new THREE.PointsMaterial({
-                color: accent,
-                size: 0.025,
-                transparent: true,
-                opacity: 0.8
-            })
-        );
+        mouth.scale.y =
+            .035+Math.abs(Math.sin(t*12))*.12;
 
+        mouth.scale.x =
+            .19+Math.abs(Math.sin(t*12))*.06;
 
-    scene.add(
-        stars
-    );
+        status.textContent = 'JON AI GAPIRMOQDA';
 
+    } else {
 
-    // ANIMATSIYA
+        mouth.scale.y = .035;
+        mouth.scale.x = .19;
 
-    let blinkAt = 0;
-
-    let blinkUntil = 0;
-
-    const clock =
-        new THREE.Clock();
-
-
-    function resize() {
-
-        const width =
-            stage.clientWidth;
-
-        const height =
-            stage.clientHeight;
-
-
-        camera.aspect =
-            width / height;
-
-
-        camera.updateProjectionMatrix();
-
-
-        renderer.setSize(
-            width,
-            height
-        );
+        status.textContent = 'VIRTUAL INTELLIGENCE';
 
     }
 
+    renderer.render(scene,camera);
 
-    window.addEventListener(
-        "resize",
-        resize
-    );
+}
 
-
-    function animate() {
-
-        requestAnimationFrame(
-            animate
-        );
-
-
-        const t =
-            clock.getElapsedTime();
-
-
-        character.position.y =
-            Math.sin(t * 1.35)
-            * 0.07;
-
-
-        character.rotation.y =
-            Math.sin(t * 0.55)
-            * 0.13;
-
-
-        head.rotation.y =
-            Math.sin(t * 0.8)
-            * 0.08;
-
-
-        head.rotation.x =
-            Math.sin(t * 0.65)
-            * 0.035;
-
-
-        ring1.rotation.z +=
-            0.003;
-
-
-        ring2.rotation.z -=
-            0.002;
-
-
-        stars.rotation.y +=
-            0.0005;
-
-
-        if (t > blinkAt) {
-
-            blinkUntil =
-                t + 0.14;
-
-            blinkAt =
-                t +
-                3.2 +
-                Math.random() * 2.2;
-
-        }
-
-
-        const blinking =
-            t < blinkUntil;
-
-
-        leftEye.scale.y =
-            blinking
-            ? 0.025
-            : 0.19;
-
-
-        rightEye.scale.y =
-            blinking
-            ? 0.025
-            : 0.19;
-
-
-        if (isSpeaking) {
-
-            mouth.scale.y =
-                0.035 +
-                Math.abs(
-                    Math.sin(t * 12)
-                ) * 0.12;
-
-
-            mouth.scale.x =
-                0.19 +
-                Math.abs(
-                    Math.sin(t * 12)
-                ) * 0.06;
-
-
-            statusNode.textContent =
-                "JON AI GAPIRMOQDA";
-
-        } else {
-
-            mouth.scale.y =
-                0.035;
-
-            mouth.scale.x =
-                0.19;
-
-            statusNode.textContent =
-                "VIRTUAL INTELLIGENCE";
-
-        }
-
-
-        renderer.render(
-            scene,
-            camera
-        );
-
-    }
-
-
-    animate();
+animate();
 
 })();
 
 </script>
-
 </body>
-
 </html>
 """
 
-
     html = (
         html
-        .replace(
-            "__NAME__",
-            safe_name
-        )
-        .replace(
-            "__STYLE__",
-            visual_style
-        )
-        .replace(
-            "__SPEAKING__",
-            "true"
-            if speaking
-            else "false"
-        )
+        .replace("__NAME__", name)
+        .replace("__STYLE__", visual_style)
+        .replace("__SPEAKING__", speaking_js)
     )
-
 
     components.html(
         html,
@@ -1216,55 +865,39 @@ https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
 
 
 # ============================================================
-# POWERPOINT
+# 5. POWERPOINT YARATISH
 # ============================================================
 
-def parse_slides(result):
+def parse_slides(text):
 
-    try:
+    cleaned = re.sub(
+        r"```(?:json)?",
+        "",
+        str(text),
+        flags=re.I
+    ).replace("```", "").strip()
 
-        clean = re.sub(
-            r"```(?:json)?",
-            "",
-            result.strip(),
-            flags=re.IGNORECASE
+    start = cleaned.find("[")
+    end = cleaned.rfind("]") + 1
+
+    if start < 0 or end <= start:
+        raise ValueError(
+            "AI javobida JSON slaydlar massivi topilmadi."
         )
 
-        clean = clean.replace(
-            "```",
-            ""
-        ).strip()
+    data = json.loads(
+        cleaned[start:end]
+    )
 
-        start = clean.find("[")
-        end = clean.rfind("]") + 1
-
-        if start < 0 or end <= start:
-            raise ValueError(
-                "JSON massiv topilmadi"
-            )
-
-        data = json.loads(
-            clean[start:end]
+    if not isinstance(data,list) or not data:
+        raise ValueError(
+            "Slaydlar ro‘yxati bo‘sh yoki noto‘g‘ri."
         )
 
-        if not isinstance(
-            data,
-            list
-        ):
-            raise ValueError(
-                "AI javobi ro'yxat shaklida emas"
-            )
+    return data
 
-        return data
 
-    except Exception as exc:
-
-        st.error(
-            f"Slayd ma'lumotlarini o'qishda xatolik: {exc}"
-        )
-
-        return []
-def create_presentation(topic, slides_data):
+def create_presentation(topic,slides_data):
 
     prs = Presentation()
 
@@ -1274,33 +907,206 @@ def create_presentation(topic, slides_data):
             prs.slide_layouts[1]
         )
 
-        # Sarlavha
         slide.shapes.title.text = str(
-            item.get("title", topic)
+            item.get("title",topic)
         )
 
-        # Asosiy matn
         body = slide.placeholders[1].text_frame
+
         body.clear()
 
-        points = item.get("points", [])
+        points = item.get("points",[])
 
-        if isinstance(points, str):
+        if isinstance(points,str):
             points = [points]
 
-        for index, point in enumerate(points):
+        for idx,point in enumerate(points):
 
-            if index == 0:
-                paragraph = body.paragraphs[0]
-            else:
-                paragraph = body.add_paragraph()
+            paragraph = (
+                body.paragraphs[0]
+                if idx == 0
+                else body.add_paragraph()
+            )
 
             paragraph.text = str(point)
             paragraph.level = 0
 
     output = BytesIO()
+
     prs.save(output)
+
     output.seek(0)
 
     return output
-  
+
+
+# ============================================================
+# 6. BOSH SAHIFA
+# ============================================================
+
+def render_home():
+
+    st.markdown(
+        """
+        <div class="jon-hero">
+
+            <h1>💎 JON AI LIVE</h1>
+
+            <p>
+            Virtual Intelligence System ·
+            Professional AI Assistant
+            </p>
+
+            <p>
+            Ta’lim, ijod, tahlil va kundalik
+            vazifalar uchun yagona AI muhiti.
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    a,b,c = st.columns(3)
+
+    with a:
+
+        st.markdown(
+            """
+            <div class="jon-card">
+                <h3>🤖 AI Intelligence</h3>
+                <p class="jon-muted">
+                Gemini asosidagi aqlli suhbat va yordam.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with b:
+
+        st.markdown(
+            """
+            <div class="jon-card">
+                <h3>👤 Live Character</h3>
+                <p class="jon-muted">
+                Three.js asosidagi jonli 3D personaj.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with c:
+
+        st.markdown(
+            """
+            <div class="jon-card">
+                <h3>🚀 Creative Tools</h3>
+                <p class="jon-muted">
+                Hujjat, tarjima, ta’lim va tahlil vositalari.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.subheader("JON personaji")
+
+    show_character(height=430)
+
+    st.caption(
+        "3D personaj animatsiyasi brauzerda ishlaydi. "
+        "Bu prototip fotorealistik inson modeli emas."
+    )
+
+
+# ============================================================
+# 7. AI CHAT
+# ============================================================
+
+def render_chat():
+
+    st.title("🤖 JON AI — Aqlli suhbat")
+
+    for item in st.session_state.messages:
+
+        with st.chat_message(item["role"]):
+            st.markdown(item["content"])
+
+    prompt = st.chat_input(
+        "JON AI ga savolingizni yozing..."
+    )
+
+    if prompt:
+
+        st.session_state.messages.append({
+            "role":"user",
+            "content":prompt
+        })
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+
+            with st.spinner("JON AI fikrlamoqda..."):
+
+                answer = ask_ai(
+                    prompt,
+                    history=st.session_state.messages[:-1]
+                )
+
+            st.markdown(answer)
+
+        st.session_state.messages.append({
+            "role":"assistant",
+            "content":answer
+        })
+
+
+# ============================================================
+# 8. TA’LIM MARKAZI
+# ============================================================
+
+def render_education():
+
+    st.title("🎓 JON AI — Ta’lim markazi")
+
+    topic = st.selectbox(
+        "Yo‘nalish",
+        [
+            "Ingliz tili",
+            "IELTS",
+            "Multilevel",
+            "Grammatika",
+            "Lug‘at",
+            "Boshqa fan"
+        ]
+    )
+
+    mode = st.selectbox(
+        "Yordam turi",
+        [
+            "Mavzuni tushuntirish",
+            "Test tuzish",
+            "Javoblarni tekshirish",
+            "Reja tuzish",
+            "Mashq yaratish"
+        ]
+    )
+
+    level = st.selectbox(
+        "Daraja",
+        [
+            "Boshlang‘ich",
+            "O‘rta",
+            "Yuqori"
+        ]
+    )
+
+    question = st.text_area(
+        "Mavzu yoki topshiriq",
+        placeholder="Masalan: Present Perfect mavzus
