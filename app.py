@@ -15,7 +15,7 @@ from pptx import Presentation
 # ============================================================
 
 APP_VERSION = "7.0"
-MODEL = "gemini-3.5-flash"
+MODEL = "gemini-2.5-flash"
 
 st.set_page_config(
     page_title="JON AI LIVE",
