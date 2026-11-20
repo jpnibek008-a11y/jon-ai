@@ -1,7 +1,7 @@
+
 # ============================================================
-# JON AI LIVE 8.0
-# Streamlit + Gemini 3.8 + Three.js
-# Professional unified application
+# JON AI LIVE 9.0 — NEXT GENERATION VIRTUAL INTELLIGENCE
+# Streamlit + Gemini AI + Three.js Dual 3D Characters
 # ============================================================
 
 import json
@@ -12,7 +12,6 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-
 from google import genai
 from pptx import Presentation
 
@@ -21,11 +20,11 @@ from pptx import Presentation
 # 1. APP CONFIGURATION
 # ============================================================
 
-APP_VERSION = "8.0"
-DEFAULT_MODEL = "gemini-3.5-flash"
+APP_VERSION = "9.0"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 st.set_page_config(
-    page_title="JON AI LIVE",
+    page_title="JON AI LIVE 9.0",
     page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -47,20 +46,12 @@ PAGES = [
 ]
 
 JON_CORE = """
-Sen JON AI nomli professional virtual yordamchisan.
-
-Asosiy til: o'zbek tili.
-
-Qoidalar:
-1. Aniq, ravon va foydali javob ber.
-2. Ma'lumotlarni to'qib chiqarma.
-3. Ishonching komil bo'lmasa, buni ochiq ayt.
-4. Murakkab vazifalarni bosqichma-bosqich tushuntir.
-5. Foydalanuvchiga hurmat bilan munosabatda bo'l.
-6. Maxfiy kalitlar va parollarni so'рама yoki oshkor qilma.
-7. Keraksiz uzun javoblardan qoch.
-8. Ta'lim, dasturlash, tarjima, tahlil va ijodiy
-   vazifalarda professional yordam ko'rsat.
+Siz JON AI nomli professional sun'iy intellekt yordamchisiz.
+Foydalanuvchiga o'zbek tilida aniq, foydali va tushunarli javob bering.
+Kerak bo'lsa ingliz, rus va boshqa tillarda ham javob bera olasiz.
+Bilmagan ma'lumotingizni to'qib chiqarmang.
+Dasturlash, ta'lim, tarjima, biznes, ijod va tahlilda yordam bering.
+Javoblarni tartibli va amaliy shaklda taqdim eting.
 """
 
 
@@ -74,9 +65,10 @@ DEFAULTS = {
     "character_name": "JON",
     "character_style": "Hologramma",
     "api_key": "",
-    "page": PAGES[0],
     "model": DEFAULT_MODEL,
-    "intro_enabled": True
+    "intro_enabled": True,
+    "page": PAGES[0],
+    "copied_prompt": "",
 }
 
 for key, value in DEFAULTS.items():
@@ -90,843 +82,855 @@ for key, value in DEFAULTS.items():
 
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
-@import url(
-'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
-);
+:root {
+    --bg: #050817;
+    --panel: #0c1430;
+    --blue: #26baff;
+    --purple: #9b5cff;
+    --text: #edf4ff;
+}
 
 .stApp {
     background:
-    radial-gradient(
-        ellipse at 10% 0%,
-        rgba(0,180,255,.16),
-        transparent 42%
-    ),
-    radial-gradient(
-        ellipse at 90% 20%,
-        rgba(120,50,255,.13),
-        transparent 45%
-    ),
-    linear-gradient(145deg,#050b16,#10182d);
-
-    color:#edf5ff;
+        radial-gradient(ellipse at 15% 10%, #17265a 0%, transparent 35%),
+        radial-gradient(ellipse at 85% 20%, #25124d 0%, transparent 35%),
+        linear-gradient(145deg, #050817, #080d20 60%, #09051c);
+    color: var(--text);
+    font-family: Inter, sans-serif;
 }
 
-html, body, [class*="css"] {
-    font-family:Inter,sans-serif;
+h1, h2, h3 {
+    color: #edf4ff !important;
+}
+
+.hero-title {
+    font-family: Orbitron, sans-serif;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-align: center;
+    font-size: clamp(30px, 5vw, 64px);
+    background: linear-gradient(90deg, #ffffff, #43caff, #a879ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px #35aaff44;
+}
+
+.hero-subtitle {
+    color: #9bb8df;
+    text-align: center;
+    letter-spacing: 4px;
+    font-size: 12px;
+}
+
+.panel {
+    background: linear-gradient(145deg, #111c3bdb, #10102bdd);
+    border: 1px solid #4e8cff44;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 0 25px #176dff12;
+    margin-bottom: 15px;
+}
+
+.feature-card {
+    background: linear-gradient(145deg, #111c38, #15102e);
+    border: 1px solid #438dff44;
+    border-radius: 15px;
+    padding: 18px;
+    min-height: 125px;
+    transition: 0.3s;
+}
+
+.feature-card:hover {
+    border-color: #43caff;
+    box-shadow: 0 0 20px #43caff33;
+    transform: translateY(-3px);
+}
+
+div.stButton > button {
+    border-radius: 12px;
+    border: 1px solid #438dff77;
+    background: linear-gradient(100deg, #123c75, #39206b);
+    color: white;
+    font-weight: 600;
+    min-height: 42px;
+}
+
+div.stButton > button:hover {
+    border-color: #54d5ff;
+    color: white;
+    box-shadow: 0 0 15px #36baff55;
 }
 
 [data-testid="stSidebar"] {
-    background:#091426;
-    border-right:1px solid rgba(80,180,255,.15);
-}
-
-.block-container {
-    max-width:1450px;
-    padding-top:1.5rem;
-    padding-bottom:3rem;
-}
-
-h1,h2,h3 {
-    color:#eaf7ff;
-}
-
-.jon-hero {
-    position:relative;
-    overflow:hidden;
-    padding:32px;
-    border:1px solid rgba(80,190,255,.35);
-    border-radius:24px;
-
-    background:
-    linear-gradient(
-        120deg,
-        rgba(12,65,105,.95),
-        rgba(35,25,85,.95)
-    );
-
-    box-shadow:0 15px 55px rgba(0,100,255,.12);
-}
-
-.jon-hero h1 {
-    font-size:clamp(28px,5vw,46px);
-    font-weight:800;
-    letter-spacing:-1px;
-    color:#e8fbff;
-}
-
-.jon-card {
-    background:rgba(17,43,72,.78);
-    border:1px solid rgba(100,190,255,.22);
-    border-radius:18px;
-    padding:20px;
-    min-height:145px;
-    transition:.3s;
-}
-
-.jon-card:hover {
-    border-color:#39d8ff;
-    transform:translateY(-3px);
-}
-
-.jon-caption {
-    color:#9ccce9;
-}
-
-.stButton > button {
-    border-radius:12px;
-    border:1px solid rgba(70,190,255,.35);
-    background:linear-gradient(110deg,#075b91,#3930a0);
-    color:white;
-    font-weight:700;
-    min-height:42px;
-}
-
-.stButton > button:hover {
-    border-color:#43dcff;
-    color:white;
-    box-shadow:0 0 20px rgba(0,190,255,.2);
+    background: linear-gradient(180deg, #080e23, #100d29);
+    border-right: 1px solid #3475b944;
 }
 
 [data-testid="stChatMessage"] {
-    border:1px solid rgba(100,190,255,.12);
-    border-radius:16px;
+    background: #101a35;
+    border: 1px solid #3d6eb533;
+    border-radius: 14px;
 }
 
-footer {
-    visibility:hidden;
+.stTextInput input, .stTextArea textarea {
+    background: #0d1730 !important;
+    color: white !important;
+    border-color: #3475b966 !important;
 }
 
+.stSelectbox div[data-baseweb="select"] {
+    background: #101a35;
+}
+
+hr {
+    border-color: #3c69a633;
+}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ============================================================
-# 4. API KEY MANAGEMENT
+# 4. GEMINI API
 # ============================================================
 
 def get_api_key():
+    key = str(st.session_state.get("api_key", "")).strip()
 
-    session_key = st.session_state.get(
-        "api_key", ""
-    ).strip()
-
-    if session_key:
-        return session_key
+    if key:
+        return key
 
     try:
-        secret_key = st.secrets.get(
-            "GEMINI_API_KEY", ""
-        )
-
-        if secret_key:
-            return str(secret_key).strip()
-
+        return str(st.secrets.get("GEMINI_API_KEY", "")).strip()
     except Exception:
-        pass
-
-    return ""
+        return ""
 
 
 def get_client():
-
     key = get_api_key()
 
     if not key:
         raise ValueError(
-            "API kaliti topilmadi. "
-            "Sozlamalar bo'limiga Gemini API kalitini kiriting."
+            "Gemini API kalitini Sozlamalar bo'limiga kiriting."
         )
 
     return genai.Client(api_key=key)
 
 
-# ============================================================
-# 5. AI ERROR HANDLING
-# ============================================================
-
 def explain_api_error(error):
-
     message = str(error)
     lower = message.lower()
 
-    if "429" in lower or "resource_exhausted" in lower:
+    if "429" in message or "resource_exhausted" in lower:
         return (
-            "⚠️ Gemini API kvotasi yoki so'rov limiti tugagan.\n\n"
-            "Quyidagilarni tekshiring:\n"
-            "- Google AI Studio'dagi API kvotasi.\n"
-            "- Billing va tarif holati.\n"
-            "- Model uchun mavjud limitlar.\n\n"
-            "Kvota tugagan bo'lsa, kutish yoki tarifni "
-            "o'zgartirish talab qilinishi mumkin."
+            "Gemini API kvotasi yoki so'rov limiti tugagan. "
+            "Biroz kuting yoki Google AI Studio'dagi limitlarni tekshiring."
         )
 
-    if "403" in lower or "permission_denied" in lower:
+    if "503" in message or "unavailable" in lower:
         return (
-            "API ruxsati rad etildi. API kaliti, loyiha "
-            "va modelga kirish huquqini tekshiring."
+            "Gemini serveri hozir band yoki vaqtincha ishlamayapti. "
+            "Birozdan keyin qayta urinib ko'ring."
         )
 
-    if "401" in lower or "unauthenticated" in lower:
-        return (
-            "API kaliti noto'g'ri yoki yaroqsiz. "
-            "Sozlamalardan kalitni qayta kiriting."
-        )
+    if "401" in message or "403" in message or "api key" in lower:
+        return "API kalit noto'g'ri yoki uning ruxsatlari yetarli emas."
 
-    if "404" in lower or "not_found" in lower:
-        return (
-            "Tanlangan Gemini modeli topilmadi yoki "
-            "undan foydalanish imkoniyati yo'q. "
-            "Sozlamalardan model nomini tekshiring."
-        )
+    if "404" in message or "not found" in lower:
+        return "Tanlangan Gemini modeli mavjud emas. Sozlamalardan modelni almashtiring."
 
-    if "timeout" in lower or "timed out" in lower:
-        return (
-            "Ulanish vaqti tugadi. Internetni tekshirib, "
-            "qayta urinib ko'ring."
-        )
+    if "timeout" in lower:
+        return "Ulanish vaqti tugadi. Internetni tekshirib, qayta urinib ko'ring."
 
-    return (
-        "Gemini bilan ishlashda xatolik yuz berdi.\n\n"
-        + message[:1200]
-    )
+    return f"Gemini bilan ishlashda xatolik: {message[:500]}"
 
-
-# ============================================================
-# 6. GEMINI AI CORE
-# ============================================================
-
-import time
-from google import genai
 
 def ask_ai(prompt, extra_context="", history=None):
-    client = genai.Client(api_key=get_api_key())
+    """Gemini AI bilan suhbat."""
 
-    models = [
-        "gemini-3.5-flash",
-        "gemini-2.5-flash"
-    ]
+    try:
+        client = get_client()
 
-    full_prompt = f"""
-    {JON_CORE}
+        model = st.session_state.get("model", DEFAULT_MODEL)
+        history = history or []
 
-    {extra_context}
+        conversation = [JON_CORE]
 
-    Foydalanuvchi: {prompt}
-    """
+        for item in history[-12:]:
+            role = item.get("role", "user")
+            content = item.get("content", "")
 
-    last_error = None
+            if not content:
+                continue
 
-    for model in models:
-        for attempt in range(2):
-            try:
-                response = client.models.generate_content(
-                    model=model,
-                    contents=full_prompt
-                )
-                return response.text
+            role_name = "Foydalanuvchi" if role == "user" else "JON AI"
+            conversation.append(f"{role_name}: {content}")
 
-            except Exception as e:
-                last_error = e
-                error_text = str(e)
+        if extra_context:
+            conversation.append(f"Qo'shimcha ma'lumot: {extra_context}")
 
-                if "503" in error_text or "UNAVAILABLE" in error_text:
-                    time.sleep(2 * (attempt + 1))
-                    continue
+        conversation.append(f"Foydalanuvchi: {prompt}")
+        conversation.append("JON AI:")
 
-                if "429" in error_text:
-                    return "Gemini API kvotasi tugagan. Limitni tekshiring."
+        full_prompt = "\n\n".join(conversation)
 
-                break
+        response = client.models.generate_content(
+            model=model,
+            contents=full_prompt
+        )
 
-    return (
-        "JON AI vaqtinchalik band. "
-        "Iltimos, birozdan keyin qayta urinib ko‘ring."
-    )
+        answer = getattr(response, "text", None)
+
+        if not answer:
+            return "AI javob qaytarmadi. Savolni qayta yuboring."
+
+        return answer.strip()
+
+    except Exception as error:
+        return explain_api_error(error)
+
+
 # ============================================================
-# 7. 3D LIVE CHARACTER
+# 5. THREE.JS DUAL CHARACTER EXPERIENCE
 # ============================================================
 
-def show_character(height=480, cinematic=False):
-
-    name = json.dumps(
-        st.session_state.character_name
-    )
-
-    styles = {
-        "Hologramma": "0x31eaff",
-        "Robot": "0xa8c9df",
-        "Virtual inson": "0xffc49a",
-        "Multfilm uslubi": "0xffb7e8",
-        "Fantastik": "0xb99aff"
-    }
-
-    color = styles.get(
-        st.session_state.character_style,
-        "0x31eaff"
-    )
-
-    intro_class = (
-        "cinematic" if cinematic else ""
-    )
+def show_character(height=610, cinematic=True):
+    name = json.dumps(st.session_state.get("character_name", "JON"))
+    style = json.dumps(st.session_state.get("character_style", "Hologramma"))
+    intro = "true" if cinematic and st.session_state.get("intro_enabled", True) else "false"
 
     html = r"""
 <!DOCTYPE html>
 <html>
 <head>
-
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-
-html,body {
-    margin:0;
-    padding:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#030817;
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: Arial, sans-serif;
 }
-
-#stage {
-    width:100%;
-    height:100%;
-    position:relative;
-    overflow:hidden;
-    border-radius:20px;
-
+#scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
     background:
-    radial-gradient(
-        ellipse at center,
-        #173f69 0%,
-        #101936 45%,
-        #030817 100%
-    );
+      radial-gradient(ellipse at 50% 60%, #142b58aa, transparent 55%),
+      radial-gradient(ellipse at 50% 20%, #21134b99, transparent 65%),
+      #050817;
 }
+canvas { display: block; width: 100%; height: 100%; }
 
-canvas {
-    display:block;
-    width:100%;
-    height:100%;
+.brand {
+    position: absolute;
+    z-index: 4;
+    top: 17px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
 }
-
-#label {
-    position:absolute;
-    bottom:22px;
-    width:100%;
-    text-align:center;
-    color:#b7f8ff;
-    font:bold 23px Arial;
-    letter-spacing:7px;
-    text-shadow:0 0 18px #00dfff;
-    pointer-events:none;
+.brand h1 {
+    margin: 0;
+    color: white;
+    font-size: clamp(22px, 4vw, 37px);
+    letter-spacing: 7px;
+    text-shadow: 0 0 20px #36caff;
 }
-
-#subtitle {
-    position:absolute;
-    bottom:6px;
-    width:100%;
-    text-align:center;
-    color:#82bde5;
-    font:11px Arial;
-    letter-spacing:3px;
+.brand span {
+    color: #a8c8ef;
+    font-size: 9px;
+    letter-spacing: 5px;
 }
-
-#portal {
-    position:absolute;
-    width:180px;
-    height:180px;
-    border:2px solid rgba(50,220,255,.7);
-    border-radius:50%;
-    left:50%;
-    top:48%;
-    transform:translate(-50%,-50%) scale(.1);
-    box-shadow:
-    0 0 20px #00dfff,
-    inset 0 0 25px #00aaff;
-    animation:portalOpen 2s ease-out forwards;
-    pointer-events:none;
+.labels {
+    position: absolute;
+    bottom: 17px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    z-index: 4;
+    pointer-events: none;
 }
-
-#flash {
-    position:absolute;
-    inset:0;
-    background:#b9faff;
-    opacity:0;
-    pointer-events:none;
-    animation:flashIn 1.2s ease-out;
+.label {
+    text-align: center;
+    color: #c5e8ff;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 12px #3bbcff;
 }
-
-#stars {
-    position:absolute;
-    inset:0;
-    background-image:
-    radial-gradient(white 1px,transparent 1px),
-    radial-gradient(#42cfff 1px,transparent 1px);
-    background-size:55px 55px,90px 90px;
-    opacity:.35;
-    animation:starsMove 18s linear infinite;
-    pointer-events:none;
+.label small {
+    display: block;
+    margin-top: 5px;
+    color: #7b9dc9;
+    font-size: 8px;
+    letter-spacing: 2px;
 }
-
-.cinematic #portal {
-    animation:portalOpen 2s ease-out forwards;
+.status {
+    position: absolute;
+    z-index: 4;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #5effce;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px #00ffaa;
 }
-
-@keyframes portalOpen {
-    0% {
-        transform:translate(-50%,-50%) scale(.1);
-        opacity:0;
-    }
-    60% {
-        opacity:1;
-    }
-    100% {
-        transform:translate(-50%,-50%) scale(2.4);
-        opacity:.05;
-    }
+#intro {
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    background: radial-gradient(circle, #173b75 0%, #090d22 55%, #02040c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 15px;
+    letter-spacing: 6px;
+    transition: opacity 1.5s ease;
+    pointer-events: none;
 }
-
-@keyframes flashIn {
-    0% {opacity:0}
-    15% {opacity:.55}
-    100% {opacity:0}
-}
-
-@keyframes starsMove {
-    from {transform:translateY(0)}
-    to {transform:translateY(-80px)}
-}
-
+#intro.hide { opacity: 0; }
 </style>
-
 </head>
-
 <body>
-
-<div id="stage" class="__INTRO__">
-
-    <div id="stars"></div>
-    <div id="portal"></div>
-    <div id="flash"></div>
-
-    <canvas id="scene"></canvas>
-
-    <div id="label"></div>
-    <div id="subtitle">VIRTUAL INTELLIGENCE</div>
-
+<div id="scene">
+    <div class="brand">
+        <h1>JON AI</h1>
+        <span>NEXT GENERATION VIRTUAL INTELLIGENCE</span>
+    </div>
+    <div class="status" id="status">● SYSTEM ONLINE</div>
+    <div class="labels">
+        <div class="label">HUMAN<small>VIRTUAL INTELLIGENCE</small></div>
+        <div class="label">ANDROID<small>ADVANCED TECHNOLOGY</small></div>
+    </div>
+    <div id="intro">INITIALIZING JON AI</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
 <script>
-
-(() => {
-
-    const stage = document.getElementById("stage");
-
-    const canvas = document.getElementById("scene");
-
-    document.getElementById("label").textContent = __NAME__;
+(function() {
+    const sceneBox = document.getElementById("scene");
+    const intro = document.getElementById("intro");
+    const status = document.getElementById("status");
 
     if (!window.THREE) {
-        document.getElementById("subtitle").textContent =
-            "3D ENGINE LOADING FAILED";
+        intro.innerText = "3D ENGINE LOAD FAILED";
         return;
     }
 
-    const T = window.THREE;
+    const THREE = window.THREE;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050817, 0.035);
 
-    const scene = new T.Scene();
-
-    const camera = new T.PerspectiveCamera(
-        40,
-        1,
+    const camera = new THREE.PerspectiveCamera(
+        42,
+        sceneBox.clientWidth / sceneBox.clientHeight,
         0.1,
         100
     );
+    camera.position.set(0, 1.1, 10.5);
 
-    camera.position.z = 7;
-
-    const renderer = new T.WebGLRenderer({
-        canvas: canvas,
+    const renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true
     });
 
-    renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio || 1, 1.5)
-    );
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(sceneBox.clientWidth, sceneBox.clientHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    sceneBox.appendChild(renderer.domElement);
 
-    const color = __COLOR__;
+    scene.add(new THREE.AmbientLight(0x7899ff, 1.5));
 
-    scene.add(
-        new T.AmbientLight(0xffffff, 1.5)
-    );
+    const keyLight = new THREE.PointLight(0x38bfff, 2.5, 30);
+    keyLight.position.set(-4, 5, 5);
+    scene.add(keyLight);
 
-    const light = new T.PointLight(
-        color,
-        3.5,
-        25
-    );
+    const purpleLight = new THREE.PointLight(0x974bff, 2.2, 25);
+    purpleLight.position.set(4, 3, 3);
+    scene.add(purpleLight);
 
-    light.position.set(3, 3, 5);
+    const floorLight = new THREE.PointLight(0x176bff, 1.8, 20);
+    floorLight.position.set(0, -3, 4);
+    scene.add(floorLight);
 
-    scene.add(light);
+    const material = (color, metalness=0.5, roughness=0.3) =>
+        new THREE.MeshStandardMaterial({
+            color,
+            metalness,
+            roughness,
+            emissive: color,
+            emissiveIntensity: 0.16
+        });
 
-    const group = new T.Group();
+    const blue = material(0x167bd1, 0.7, 0.25);
+    const cyan = material(0x55dfff, 0.6, 0.2);
+    const dark = material(0x101d38, 0.8, 0.28);
+    const skin = material(0xc58e78, 0.1, 0.55);
+    const white = material(0xc9eaff, 0.5, 0.2);
+    const purple = material(0x8c48e8, 0.7, 0.2);
 
-    scene.add(group);
-
-    const material = new T.MeshStandardMaterial({
-        color: color,
-        metalness: 0.5,
-        roughness: 0.25,
-        emissive: color,
-        emissiveIntensity: 0.22
+    const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x44d8ff,
+        transparent: true,
+        opacity: 0.8
     });
 
-    const dark = new T.MeshStandardMaterial({
-        color: 0x14243d,
-        metalness: 0.6,
-        roughness: 0.3
-    });
-
-    function sphere(parent, mat, pos, scale) {
-
-        const obj = new T.Mesh(
-            new T.SphereGeometry(1, 32, 24),
+    function sphere(parent, x, y, z, sx, sy, sz, mat) {
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 24, 18),
             mat
         );
-
-        obj.position.set(...pos);
-
-        obj.scale.set(...scale);
-
-        parent.add(obj);
-
-        return obj;
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        parent.add(mesh);
+        return mesh;
     }
 
-    // Body
+    function cylinder(parent, x, y, z, rt, rb, h, mat) {
+        const mesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(rt, rb, h, 20),
+            mat
+        );
+        mesh.position.set(x, y, z);
+        parent.add(mesh);
+        return mesh;
+    }
 
-    sphere(
-        group,
-        dark,
-        [0, -1, 0],
-        [0.85, 1, 0.5]
+    function ring(parent, radius, tube, color, x, y, z, rotationX) {
+        const mesh = new THREE.Mesh(
+            new THREE.TorusGeometry(radius, tube, 10, 90),
+            new THREE.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.75
+            })
+        );
+        mesh.position.set(x, y, z);
+        mesh.rotation.x = rotationX;
+        parent.add(mesh);
+        return mesh;
+    }
+
+    function makeHuman() {
+        const root = new THREE.Group();
+        root.position.x = -2.05;
+        scene.add(root);
+
+        const body = new THREE.Group();
+        root.add(body);
+
+        // Legs
+        cylinder(body, -0.22, -1.05, 0, 0.13, 0.17, 0.9, dark);
+        cylinder(body, 0.22, -1.05, 0, 0.13, 0.17, 0.9, dark);
+        sphere(body, -0.22, -1.48, 0.1, 0.19, 0.12, 0.3, blue);
+        sphere(body, 0.22, -1.48, 0.1, 0.19, 0.12, 0.3, blue);
+
+        // Torso and shoulders
+        sphere(body, 0, -0.05, 0, 0.57, 0.78, 0.32, blue);
+        sphere(body, 0, -0.08, 0.29, 0.38, 0.48, 0.1, dark);
+
+        // Neck
+        cylinder(body, 0, 0.72, 0, 0.15, 0.17, 0.32, skin);
+
+        // Head
+        const head = new THREE.Group();
+        head.position.y = 1.35;
+        body.add(head);
+
+        sphere(head, 0, 0, 0, 0.43, 0.55, 0.36, skin);
+        sphere(head, 0, 0.39, -0.015, 0.39, 0.19, 0.34, dark);
+
+        // Eyes
+        const eyeMat = new THREE.MeshBasicMaterial({color: 0x8beaff});
+        const eyeL = sphere(head, -0.16, 0.08, 0.32, 0.055, 0.035, 0.025, eyeMat);
+        const eyeR = sphere(head, 0.16, 0.08, 0.32, 0.055, 0.035, 0.025, eyeMat);
+
+        // Mouth
+        const mouth = sphere(head, 0, -0.22, 0.33, 0.11, 0.018, 0.02, dark);
+
+        // Arms
+        const armL = new THREE.Group();
+        const armR = new THREE.Group();
+        armL.position.set(-0.57, 0.36, 0);
+        armR.position.set(0.57, 0.36, 0);
+        body.add(armL, armR);
+
+        cylinder(armL, 0, -0.38, 0, 0.13, 0.17, 0.7, skin);
+        cylinder(armR, 0, -0.38, 0, 0.13, 0.17, 0.7, skin);
+        sphere(armL, 0, -0.78, 0, 0.15, 0.16, 0.15, skin);
+        sphere(armR, 0, -0.78, 0, 0.15, 0.16, 0.15, skin);
+
+        ring(root, 0.9, 0.018, 0x45cfff, 0, -1.7, 0, 0);
+        ring(root, 0.75, 0.012, 0x8e55ff, 0, -1.7, 0, 0);
+
+        return {root, body, head, mouth, eyeL, eyeR, armL, armR};
+    }
+
+    function makeAndroid() {
+        const root = new THREE.Group();
+        root.position.x = 2.05;
+        scene.add(root);
+
+        const body = new THREE.Group();
+        root.add(body);
+
+        // Legs
+        cylinder(body, -0.22, -1.05, 0, 0.15, 0.18, 0.9, dark);
+        cylinder(body, 0.22, -1.05, 0, 0.15, 0.18, 0.9, dark);
+
+        sphere(body, -0.22, -1.48, 0.12, 0.2, 0.12, 0.3, blue);
+        sphere(body, 0.22, -1.48, 0.12, 0.2, 0.12, 0.3, blue);
+
+        // Torso
+        sphere(body, 0, -0.05, 0, 0.58, 0.77, 0.34, dark);
+        sphere(body, 0, -0.1, 0.31, 0.34, 0.42, 0.1, blue);
+        sphere(body, 0, -0.1, 0.42, 0.15, 0.16, 0.035, cyan);
+
+        // Neck and head
+        cylinder(body, 0, 0.75, 0, 0.17, 0.17, 0.28, blue);
+
+        const head = new THREE.Group();
+        head.position.y = 1.36;
+        body.add(head);
+
+        sphere(head, 0, 0, 0, 0.45, 0.48, 0.38, dark);
+        sphere(head, 0, 0.02, 0.29, 0.36, 0.25, 0.12, blue);
+
+        // Face visor
+        sphere(head, 0, 0.02, 0.39, 0.29, 0.13, 0.035, cyan);
+
+        const eyeMat = new THREE.MeshBasicMaterial({
+            color: 0xb9f8ff
+        });
+        const eyeL = sphere(head, -0.14, 0.04, 0.43, 0.06, 0.035, 0.025, eyeMat);
+        const eyeR = sphere(head, 0.14, 0.04, 0.43, 0.06, 0.035, 0.025, eyeMat);
+        const mouth = sphere(head, 0, -0.17, 0.41, 0.12, 0.018, 0.02, purple);
+
+        // Side ear lights
+        sphere(head, -0.43, 0, 0, 0.07, 0.15, 0.13, cyan);
+        sphere(head, 0.43, 0, 0, 0.07, 0.15, 0.13, cyan);
+
+        // Arms
+        const armL = new THREE.Group();
+        const armR = new THREE.Group();
+        armL.position.set(-0.58, 0.36, 0);
+        armR.position.set(0.58, 0.36, 0);
+        body.add(armL, armR);
+
+        cylinder(armL, 0, -0.38, 0, 0.16, 0.19, 0.72, blue);
+        cylinder(armR, 0, -0.38, 0, 0.16, 0.19, 0.72, blue);
+        sphere(armL, 0, -0.78, 0, 0.17, 0.17, 0.17, dark);
+        sphere(armR, 0, -0.78, 0, 0.17, 0.17, 0.17, dark);
+
+        ring(root, 1.0, 0.022, 0x36cfff, 0, -1.7, 0, 0);
+        ring(root, 0.77, 0.014, 0xa55cff, 0, -1.7, 0, 0);
+
+        return {root, body, head, mouth, eyeL, eyeR, armL, armR};
+    }
+
+    const human = makeHuman();
+    const android = makeAndroid();
+
+    // Floating energy rings
+    const energyRings = [];
+    for (let i = 0; i < 5; i++) {
+        const r = ring(
+            scene,
+            2.3 + i * 0.24,
+            0.008,
+            i % 2 ? 0x9655ff : 0x36cfff,
+            0,
+            -0.1,
+            -1.2,
+            Math.PI / 2
+        );
+        energyRings.push(r);
+    }
+
+    // Portal
+    const portal = new THREE.Group();
+    portal.position.set(0, 0.1, -1.5);
+    scene.add(portal);
+
+    const portalRing = new THREE.Mesh(
+        new THREE.TorusGeometry(3.15, 0.035, 12, 120),
+        new THREE.MeshBasicMaterial({
+            color: 0x4d9fff,
+            transparent: true,
+            opacity: 0.7
+        })
     );
+    portal.add(portalRing);
 
-    // Shoulders
-
-    sphere(
-        group,
-        material,
-        [-0.8, -0.65, 0],
-        [0.3, 0.25, 0.3]
-    );
-
-    sphere(
-        group,
-        material,
-        [0.8, -0.65, 0],
-        [0.3, 0.25, 0.3]
-    );
-
-    // Head
-
-    const head = new T.Group();
-
-    head.position.y = 0.65;
-
-    group.add(head);
-
-    sphere(
-        head,
-        material,
-        [0, 0, 0],
-        [0.72, 0.85, 0.58]
-    );
-
-    const white = new T.MeshBasicMaterial({
-        color: 0xffffff
-    });
-
-    const black = new T.MeshBasicMaterial({
-        color: 0x06101c
-    });
-
-    const eyeL = sphere(
-        head,
-        white,
-        [-0.26, 0.08, 0.49],
-        [0.14, 0.17, 0.07]
-    );
-
-    const eyeR = sphere(
-        head,
-        white,
-        [0.26, 0.08, 0.49],
-        [0.14, 0.17, 0.07]
-    );
-
-    sphere(
-        head,
-        black,
-        [-0.25, 0.08, 0.55],
-        [0.07, 0.09, 0.035]
-    );
-
-    sphere(
-        head,
-        black,
-        [0.27, 0.08, 0.55],
-        [0.07, 0.09, 0.035]
-    );
-
-    const mouth = sphere(
-        head,
-        black,
-        [0, -0.32, 0.53],
-        [0.18, 0.035, 0.035]
-    );
-
-    // Energy rings
-
-    const ringMaterial = new T.MeshBasicMaterial({
-        color: color,
-        transparent: true,
-        opacity: 0.7
-    });
-
-    const ring1 = new T.Mesh(
-        new T.TorusGeometry(1.35, 0.018, 8, 100),
-        ringMaterial
-    );
-
-    ring1.rotation.x = 1.2;
-
-    ring1.position.y = -0.5;
-
-    group.add(ring1);
-
-    const ring2 = new T.Mesh(
-        new T.TorusGeometry(1.55, 0.009, 8, 100),
-        ringMaterial
-    );
-
-    ring2.rotation.x = -0.5;
-
-    group.add(ring2);
-
-    // Particles
-
-    const particleCount = 350;
-
-    const positions = new Float32Array(
-        particleCount * 3
-    );
+    // Stars and particles
+    const particleCount = window.innerWidth < 600 ? 350 : 650;
+    const positions = new Float32Array(particleCount * 3);
 
     for (let i = 0; i < particleCount; i++) {
-
-        positions[i * 3] = (Math.random() - 0.5) * 7;
-
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 7;
-
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 3;
+        positions[i * 3] = (Math.random() - 0.5) * 15;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 9;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 9;
     }
 
-    const particleGeometry = new T.BufferGeometry();
-
+    const particleGeometry = new THREE.BufferGeometry();
     particleGeometry.setAttribute(
         "position",
-        new T.BufferAttribute(positions, 3)
+        new THREE.BufferAttribute(positions, 3)
     );
 
-    const particleMaterial = new T.PointsMaterial({
-        color: color,
-        size: 0.025,
+    const particleMaterial = new THREE.PointsMaterial({
+        color: 0x72caff,
+        size: 0.035,
         transparent: true,
-        opacity: 0.7
+        opacity: 0.8
     });
 
-    const particles = new T.Points(
+    const particles = new THREE.Points(
         particleGeometry,
         particleMaterial
     );
-
     scene.add(particles);
 
-    const clock = new T.Clock();
+    // Energy arcs
+    const arcs = [];
 
-    function resize() {
+    for (let i = 0; i < 9; i++) {
+        const points = [];
+        const start = new THREE.Vector3(
+            (Math.random() - 0.5) * 5,
+            (Math.random() - 0.5) * 3,
+            0.2
+        );
 
-        const w = Math.max(stage.clientWidth, 1);
+        let current = start.clone();
 
-        const h = Math.max(stage.clientHeight, 1);
+        for (let j = 0; j < 6; j++) {
+            current = current.clone().add(
+                new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.55,
+                    (Math.random() - 0.5) * 0.55,
+                    0
+                )
+            );
+            points.push(current.clone());
+        }
 
-        camera.aspect = w / h;
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(
+            geometry,
+            new THREE.LineBasicMaterial({
+                color: i % 2 ? 0x9b5cff : 0x42dfff,
+                transparent: true,
+                opacity: 0.0
+            })
+        );
 
-        camera.updateProjectionMatrix();
-
-        renderer.setSize(w, h, false);
+        scene.add(line);
+            arcs.push(line);
     }
 
-    if (window.ResizeObserver) {
-        new ResizeObserver(resize).observe(stage);
-    } else {
-        window.addEventListener("resize", resize);
-    }
+    // Floor platform
+    const platform = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.6, 3.6, 0.08, 80),
+        new THREE.MeshBasicMaterial({
+            color: 0x0c2852,
+            transparent: true,
+            opacity: 0.42
+        })
+    );
+    platform.position.y = -1.72;
+    platform.position.z = -0.3;
+    scene.add(platform);
 
-    resize();
+    const clock = new THREE.Clock();
+    let frame = 0;
+    let isSpeaking = false;
 
-    let animationId;
+    // Future voice integration
+    window.JONCharacter = {
+        speak: function(value) {
+            isSpeaking = !!value;
+            status.innerText = isSpeaking
+                ? "● JON AI IS SPEAKING"
+                : "● SYSTEM ONLINE";
+        }
+    };
 
     function animate() {
-
-        animationId = requestAnimationFrame(animate);
+        requestAnimationFrame(animate);
 
         const t = clock.getElapsedTime();
+        frame++;
 
-        group.position.y = Math.sin(t * 1.4) * 0.08;
+        [human, android].forEach((character, index) => {
+            const phase = index * 1.3;
 
-        group.rotation.y = Math.sin(t * 0.5) * 0.15;
+            character.root.position.y =
+                Math.sin(t * 1.5 + phase) * 0.08;
 
-        head.rotation.x = Math.sin(t * 0.8) * 0.04;
+            character.root.rotation.y =
+                Math.sin(t * 0.45 + phase) * 0.08;
 
-        head.rotation.y = Math.sin(t * 0.7) * 0.05;
+            character.head.rotation.y =
+                Math.sin(t * 0.8 + phase) * 0.08;
 
-        ring1.rotation.z += 0.003;
+            character.body.rotation.z =
+                Math.sin(t * 1.1 + phase) * 0.025;
 
-        ring2.rotation.z -= 0.002;
+            character.armL.rotation.z =
+                Math.sin(t * 1.4 + phase) * 0.08;
 
-        particles.rotation.y = t * 0.025;
+            character.armR.rotation.z =
+                -Math.sin(t * 1.4 + phase) * 0.08;
 
-        mouth.scale.y =
-            0.035 + Math.abs(Math.sin(t * 3)) * 0.035;
+            const mouthMove = isSpeaking
+                ? 0.04 + Math.abs(Math.sin(t * 12)) * 0.08
+                : 0.018;
+
+            character.mouth.scale.y = mouthMove;
+
+            const blink = Math.sin(t * 1.1 + phase * 4) > 0.995
+                ? 0.15 : 1;
+
+            character.eyeL.scale.y = 0.035 * blink;
+            character.eyeR.scale.y = 0.035 * blink;
+        });
+
+        energyRings.forEach((r, i) => {
+            r.rotation.z = t * (0.12 + i * 0.035);
+            r.material.opacity =
+                0.35 + Math.sin(t * 2 + i) * 0.2;
+        });
+
+        portalRing.rotation.z = t * 0.08;
+        portal.scale.setScalar(
+            1 + Math.sin(t * 0.7) * 0.025
+        );
+
+        particles.rotation.y = t * 0.012;
+        particles.rotation.z = Math.sin(t * 0.1) * 0.02;
+
+        arcs.forEach((arc, i) => {
+            arc.material.opacity =
+                Math.max(0, Math.sin(t * 3 + i * 2) * 0.45);
+        });
+
+        keyLight.intensity = 2.2 + Math.sin(t * 2) * 0.4;
+        purpleLight.intensity = 2 + Math.cos(t * 1.6) * 0.35;
 
         renderer.render(scene, camera);
     }
 
+    function resize() {
+        const w = sceneBox.clientWidth;
+        const h = sceneBox.clientHeight;
+
+        if (!w || !h) return;
+
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+
+    window.addEventListener("resize", resize);
+
+    if (""" + intro + r""") {
+        setTimeout(() => intro.classList.add("hide"), 800);
+        setTimeout(() => intro.remove(), 2400);
+    } else {
+        intro.remove();
+    }
+
     animate();
-
-    window.addEventListener("pagehide", () => {
-        cancelAnimationFrame(animationId);
-        renderer.dispose();
-        particleGeometry.dispose();
-    });
-
 })();
-
 </script>
-
 </body>
 </html>
 """
 
-    html = (
-        html.replace("__NAME__", name)
-        .replace("__COLOR__", color)
-        .replace("__INTRO__", intro_class)
-    )
-
-    components.html(
-        html,
-        height=height,
-        scrolling=False
-    )
+    components.html(html, height=height, scrolling=False)
 
 
 # ============================================================
-# 8. HOME PAGE
+# 6. HOME PAGE
 # ============================================================
 
 def render_home():
-
-    st.markdown("""
-    <div class="jon-hero">
-        <h1>💎 JON AI LIVE 8.0</h1>
-        <p>Professional Virtual Intelligence System</p>
-        <p>Ta'lim · Ijod · Tahlil · AI suhbat · Virtual personaj</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.subheader("JON — sizning virtual yordamchingiz")
-
-    show_character(
-        height=470,
-        cinematic=st.session_state.intro_enabled
+    st.markdown(
+        '<div class="hero-title">JON AI</div>',
+        unsafe_allow_html=True
     )
 
     st.markdown(
-        "### ✨ Xush kelibsiz!"
+        '<div class="hero-subtitle">NEXT GENERATION VIRTUAL INTELLIGENCE</div>',
+        unsafe_allow_html=True
     )
 
-    a, b, c = st.columns(3)
+    show_character(height=620, cinematic=True)
 
-    with a:
-        st.markdown("""
-        <div class="jon-card">
-            <h3>🤖 AI Intelligence</h3>
-            <p>Gemini AI yordamida aqlli suhbat.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("### ✨ JON AI imkoniyatlari")
 
-    with b:
-        st.markdown("""
-        <div class="jon-card">
-            <h3>👤 Live Character</h3>
-            <p>3D virtual personaj va animatsiyalar.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    columns = st.columns(3)
 
-    with c:
-        st.markdown("""
-        <div class="jon-card">
-            <h3>🚀 Creative Studio</h3>
-            <p>Ta'lim va ijodiy vositalar.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    features = [
+        ("🤖", "AI Chat", "Sun'iy intellekt bilan muloqot"),
+        ("🎓", "Ta'lim markazi", "IELTS, Multilevel va grammatika"),
+        ("📊", "PowerPoint", "Taqdimotlar tayyorlash"),
+        ("🌐", "Tarjimon", "Ko'p tilli tarjima"),
+        ("📈", "Excel tahlil", "Jadval va ma'lumotlar tahlili"),
+        ("🎨", "Creative Studio", "Professional promptlar")
+    ]
 
-    st.divider()
+    for i, feature in enumerate(features):
+        with columns[i % 3]:
+            st.markdown(
+                f"""
+                <div class="feature-card">
+                    <div style="font-size:28px">{feature[0]}</div>
+                    <b>{feature[1]}</b>
+                    <div style="color:#9bb8df;font-size:13px;margin-top:8px">
+                        {feature[2]}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-    if st.button("🤖 JON bilan suhbatni boshlash"):
-        st.session_state.page = PAGES[1]
+    st.write("")
+
+    if st.button(
+        "🤖 JON AI bilan suhbatni boshlash",
+        use_container_width=True
+    ):
+        st.session_state.page = "🤖 AI Chat"
         st.rerun()
 
 
 # ============================================================
-# 9. AI CHAT
+# 7. AI CHAT
 # ============================================================
 
 def render_chat():
+    st.title("🤖 JON AI — AI Chat")
+    st.caption("Sun'iy intellekt bilan jonli muloqot")
 
-    st.title("🤖 JON AI — Chat")
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    st.caption(
-        "JON AI bilan savol-javob va professional suhbat."
-    )
-
-    if st.button("🗑️ Suhbat tarixini tozalash"):
-        st.session_state.messages = []
-        st.rerun()
-
-    for item in st.session_state.messages:
-
-        with st.chat_message(item["role"]):
-
-            st.markdown(item["content"])
-
-    prompt = st.chat_input(
-        "JON AI ga yozing..."
-    )
+    prompt = st.chat_input("JON AI'ga xabar yozing...")
 
     if prompt:
-
-        history = list(
-            st.session_state.messages
-        )
+        history = st.session_state.messages.copy()
 
         st.session_state.messages.append({
             "role": "user",
@@ -934,20 +938,12 @@ def render_chat():
         })
 
         with st.chat_message("user"):
-            st.write(prompt)
+            st.markdown(prompt)
 
         with st.chat_message("assistant"):
-
-            with st.spinner(
-                "JON AI fikrlamoqda..."
-            ):
-
-                answer = ask_ai(
-                    prompt,
-                    history
-                )
-
-            st.markdown(answer)
+            with st.spinner("JON AI javob tayyorlamoqda..."):
+                answer = ask_ai(prompt, history=history)
+                st.markdown(answer)
 
         st.session_state.messages.append({
             "role": "assistant",
@@ -956,1031 +952,530 @@ def render_chat():
 
 
 # ============================================================
-# 10. EDUCATION CENTER
+# 8. EDUCATION CENTER
 # ============================================================
 
 def render_education():
-
     st.title("🎓 JON AI — Ta'lim markazi")
 
     topic = st.selectbox(
         "Yo'nalish",
         [
-            "Ingliz tili",
-            "IELTS",
-            "Multilevel",
-            "Grammatika",
-            "Lug'at",
-            "Matematika",
-            "Dasturlash",
-            "Boshqa fan"
+            "Ingliz tili", "IELTS", "Multilevel",
+            "Grammatika", "Lug'at", "Speaking",
+            "Writing", "Reading", "Listening", "Forex"
         ]
     )
 
     mode = st.selectbox(
-        "Yordam turi",
+        "O'rganish usuli",
         [
             "Mavzuni tushuntirish",
             "Test tuzish",
+            "Mashq bajarish",
             "Javoblarni tekshirish",
-            "Reja tuzish",
-            "Mashq yaratish",
-            "Misollar berish"
+            "Lug'at tuzish",
+            "Dars rejasi"
         ]
     )
-st.selectbox(
-    "Bilim darajasi",
-    [
-        "Boshlang‘ich",
-        "O‘rta",
-        "Yuqori",
-        "Professional"
-    ],
-    key="education_level"
-)
 
-level = st.session_state.education_level
+    level = st.selectbox(
+        "Bilim darajasi",
+        [
+            "Beginner", "Elementary", "Pre-Intermediate",
+            "Intermediate", "Upper-Intermediate", "Advanced"
+        ]
+    )
 
-question = st.text_area(
-    "Mavzu yoki topshiriqni kiriting",
-    placeholder="Masalan: Present Perfect mavzusini tushuntiring..."
-)
+    question = st.text_area("Mavzu yoki savolingiz")
 
-if st.button("🚀 Darsni boshlash", key="education_start"):
-    if not question.strip():
-        st.warning("Iltimos, mavzu yoki topshiriq kiriting.")
-    else:
-        prompt = f"""
-        Fan: {topic}
-        Yordam turi: {mode}
-        Bilim darajasi: {level}
-        Topshiriq: {question}
+    if st.button("🎓 Darsni boshlash", use_container_width=True):
+        if not question.strip():
+            st.warning("Avval mavzu yoki savol kiriting.")
+        else:
+            prompt = f"""
+            Yo'nalish: {topic}
+            O'rganish usuli: {mode}
+            Daraja: {level}
+            Foydalanuvchi so'rovi: {question}
+            Mavzuni bosqichma-bosqich tushuntiring.
+            Misollar va amaliy mashqlar bering.
+            """
 
-        O‘quvchiga tushunarli, tartibli va sifatli
-        ta'limiy material tayyorla.
-        Zarur bo‘lsa misollar va mashqlar ham ber.
-        """
-        with st.spinner("JON AI dars tayyorlamoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown("### 📚 JON AI javobi")
-        st.markdown(answer)
+            with st.spinner("Dars tayyorlanmoqda..."):
+                st.markdown(ask_ai(prompt))
 
 
 # ============================================================
-# 11. POWERPOINT STUDIO
+# 9. POWERPOINT
 # ============================================================
 
 def render_powerpoint():
-
     st.title("📊 JON AI — PowerPoint Studio")
 
-    st.write(
-        "Sun'iy intellekt yordamida taqdimot rejasini "
-        "va PowerPoint faylini tayyorlang."
-    )
+    topic = st.text_input("Taqdimot mavzusi")
+    slide_count = st.slider("Slaydlar soni", 3, 20, 8)
+    language = st.selectbox("Taqdimot tili", ["O'zbek", "Ingliz", "Rus"])
 
-    topic = st.text_input(
-        "Taqdimot mavzusi",
-        placeholder="Masalan: Artificial Intelligence"
-    )
-
-    slide_count = st.slider(
-        "Slaydlar soni",
-        min_value=3,
-        max_value=20,
-        value=8
-    )
-
-    language = st.selectbox(
-        "Taqdimot tili",
-        ["O‘zbekcha", "English", "Русский"]
-    )
-
-    style = st.selectbox(
-        "Taqdimot uslubi",
-        [
-            "Professional",
-            "Minimalistik",
-            "Zamonaviy",
-            "Ta'limiy",
-            "Biznes"
-        ]
-    )
-
-    if st.button("✨ Taqdimot yaratish"):
-
+    if st.button("✨ Taqdimot yaratish", use_container_width=True):
         if not topic.strip():
-            st.warning("Taqdimot mavzusini kiriting.")
+            st.warning("Mavzuni kiriting.")
             return
 
         prompt = f"""
-        Quyidagi mavzuda PowerPoint uchun
-        {slide_count} ta slaydlik material tayyorla.
-
-        Mavzu: {topic}
-        Til: {language}
-        Uslub: {style}
-
-        Har bir slaydni quyidagi formatda yoz:
-
+        {topic} mavzusida {slide_count} slaydli taqdimot tayyorla.
+        Til: {language}.
+        Har bir slayd:
         SLIDE 1: Sarlavha
-        TITLE: ...
-        CONTENT:
-        - ...
-        - ...
-        - ...
-
-        Har bir slayd uchun alohida sarlavha
-        va 3-5 ta mazmunli punkt yoz.
+        BODY:
+        - Birinchi fikr
+        - Ikkinchi fikr
         """
 
-        with st.spinner("Taqdimot mazmuni yaratilmoqda..."):
+        with st.spinner("Slaydlar tayyorlanmoqda..."):
             result = ask_ai(prompt)
 
-        st.session_state["ppt_content"] = result
+        st.markdown(result)
 
-    if st.session_state.get("ppt_content"):
+        presentation = Presentation()
 
-        st.markdown("### 📑 Taqdimot mazmuni")
+        for slide_text in re.split(
+            r"(?=SLIDE\s+\d+)",
+            result,
+            flags=re.IGNORECASE
+        ):
+            slide_text = slide_text.strip()
 
-        st.markdown(st.session_state.ppt_content)
+            if not slide_text:
+                continue
 
-        if st.button("📥 PowerPoint faylini tayyorlash"):
+            slide = presentation.slides.add_slide(
+                presentation.slide_layouts[1]
+            )
 
-            try:
-                presentation = Presentation()
+            lines = slide_text.splitlines()
+            slide.shapes.title.text = lines[0][:150]
 
-                for line in st.session_state.ppt_content.splitlines():
+            body = slide.placeholders[1].text_frame
+            body.clear()
 
-                    line = line.strip()
+            for line in lines[1:]:
+                line = re.sub(
+                    r"^(TITLE:|BODY:)",
+                    "",
+                    line
+                ).strip()
 
-                    if not line:
-                        continue
+                if line:
+                    paragraph = body.add_paragraph()
+                    paragraph.text = line.lstrip("-• ")
 
-                    if line.upper().startswith("SLIDE "):
+        output = BytesIO()
+        presentation.save(output)
+        output.seek(0)
 
-                        slide = presentation.slides.add_slide(
-                            presentation.slide_layouts[1]
-                        )
-
-                        slide.shapes.title.text = line
-
-                        body = slide.placeholders[1]
-                        body.text = ""
-
-                    elif line.startswith("TITLE:"):
-
-                        if "slide" in locals():
-                            slide.shapes.title.text = (
-                                line.replace("TITLE:", "").strip()
-                            )
-
-                    elif line.startswith("-"):
-
-                        if "slide" in locals():
-                            paragraph = body.text_frame.add_paragraph()
-                            paragraph.text = line.lstrip("- ").strip()
-                            paragraph.level = 0
-
-                if len(presentation.slides) == 0:
-
-                    slide = presentation.slides.add_slide(
-                        presentation.slide_layouts[1]
-                    )
-
-                    slide.shapes.title.text = topic
-
-                    slide.placeholders[1].text = (
-                        st.session_state.ppt_content[:3000]
-                    )
-
-                output = BytesIO()
-
-                presentation.save(output)
-
-                output.seek(0)
-
-                st.download_button(
-                    "⬇️ PowerPoint faylini yuklab olish",
-                    data=output,
-                    file_name="JON_AI_Presentation.pptx",
-                    mime=(
-                        "application/vnd.openxmlformats-officedocument."
-                        "presentationml.presentation"
-                    )
-                )
-
-            except Exception as error:
-                st.error(f"PowerPoint yaratishda xatolik: {error}")
+        st.download_button(
+            "📥 PowerPoint yuklab olish",
+            data=output,
+            file_name="JON_AI_presentation.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
 
 
 # ============================================================
-# 12. TRANSLATOR
+# 10. TRANSLATOR
 # ============================================================
 
 def render_translator():
+    st.title("🌐 JON AI — Tarjimon")
 
-    st.title("🌐 JON AI — Professional Translator")
-
-    text_to_translate = st.text_area(
-        "Tarjima qilinadigan matn",
-        height=200,
-        placeholder="Matnni shu yerga kiriting..."
+    source = st.selectbox(
+        "Qaysi tildan?",
+        ["Avtomatik aniqlash", "O'zbek", "Ingliz", "Rus", "Turk", "Arab"]
     )
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        source_language = st.selectbox(
-            "Asl til",
-            [
-                "Avtomatik aniqlash",
-                "O‘zbek",
-                "English",
-                "Русский",
-                "Turkish",
-                "Arabic",
-                "French",
-                "German"
-            ]
-        )
-
-    with col2:
-        target_language = st.selectbox(
-            "Tarjima tili",
-            [
-                "O‘zbek",
-                "English",
-                "Русский",
-                "Turkish",
-                "Arabic",
-                "French",
-                "German"
-            ]
-        )
-
-    translation_style = st.selectbox(
-        "Tarjima uslubi",
-        [
-            "Tabiiy va ravon",
-            "Akademik",
-            "Rasmiy",
-            "Oddiy suhbat",
-            "So‘zma-so‘z"
-        ]
+    target = st.selectbox(
+        "Qaysi tilga?",
+        ["O'zbek", "Ingliz", "Rus", "Turk", "Arab", "Nemis", "Fransuz"]
     )
 
-    if st.button("🌍 Tarjima qilish"):
+    text_input = st.text_area("Tarjima qilinadigan matn", height=180)
 
-        if not text_to_translate.strip():
-            st.warning("Tarjima uchun matn kiriting.")
-            return
+    if st.button("🌐 Tarjima qilish"):
+        if not text_input.strip():
+            st.warning("Matn kiriting.")
+        else:
+            prompt = f"""
+            {source} tilidan {target} tiliga tarjima qiling.
+            Matn: {text_input}
+            """
 
-        prompt = f"""
-        Quyidagi matnni tarjima qil.
+            with st.spinner("Tarjima qilinmoqda..."):
+                result = ask_ai(prompt)
 
-        Asl til: {source_language}
-        Maqsad til: {target_language}
-        Uslub: {translation_style}
+            st.markdown(result)
 
-        Talablar:
-        - Ma'noni saqla.
-        - Grammatik jihatdan to‘g‘ri tarjima qil.
-        - Keraksiz izoh qo‘shma.
-        - Ismlar va raqamlarni saqla.
-
-        MATN:
-        {text_to_translate}
-        """
-
-        with st.spinner("Tarjima qilinmoqda..."):
-            result = ask_ai(prompt)
-
-        st.markdown("### ✅ Tarjima natijasi")
-        st.text_area(
-            "Natija",
-            value=result,
-            height=220
-        )
-
-        st.download_button(
-            "📥 Tarjimani TXT shaklida yuklab olish",
-            data=result,
-            file_name="JON_AI_translation.txt",
-            mime="text/plain"
-        )
+            st.download_button(
+                "📥 Tarjimani yuklab olish",
+                result,
+                file_name="jon_ai_translation.txt"
+            )
 
 
 # ============================================================
-# 13. IMAGE PROMPT STUDIO
+# 11. IMAGE PROMPT
 # ============================================================
 
 def render_image_prompt():
-
     st.title("🎨 JON AI — Image Prompt Studio")
 
-    st.write(
-        "Professional AI rasm generatorlari uchun "
-        "batafsil promptlar tayyorlang."
-    )
+    subject = st.text_input("Rasm mavzusi")
 
-    subject = st.text_input(
-        "Rasm mavzusi",
-        placeholder="Masalan: Futuristic city"
-    )
-
-    art_style = st.selectbox(
-        "San'at uslubi",
+    style = st.selectbox(
+        "Rasm uslubi",
         [
-            "Realistic",
-            "Cinematic",
-            "3D Render",
-            "Anime",
-            "Digital Art",
-            "Fantasy",
-            "Minimalist",
-            "Photorealistic"
-        ]
-    )
-
-    lighting = st.selectbox(
-        "Yoritish",
-        [
-            "Cinematic lighting",
-            "Soft lighting",
-            "Neon lighting",
-            "Natural lighting",
-            "Dramatic lighting"
+            "Realistic", "Cinematic", "3D Render",
+            "Anime", "Cyberpunk", "Fantasy",
+            "Minimalist", "Professional Branding"
         ]
     )
 
     ratio = st.selectbox(
-        "Rasm formati",
-        [
-            "1:1",
-            "16:9",
-            "9:16",
-            "4:3",
-            "3:2"
-        ]
+        "Format",
+        ["1:1", "16:9", "9:16", "4:5", "3:2"]
     )
 
-    details = st.text_area(
-        "Qo‘shimcha talablar",
-        placeholder="Ranglar, fon, kamera burchagi..."
-    )
+    details = st.text_area("Qo'shimcha talablar")
 
-    if st.button("✨ Professional prompt yaratish"):
-
+    if st.button("✨ Prompt yaratish"):
         if not subject.strip():
             st.warning("Rasm mavzusini kiriting.")
-            return
+        else:
+            prompt = f"""
+            Create a professional image generation prompt.
+            Subject: {subject}
+            Style: {style}
+            Aspect ratio: {ratio}
+            Additional requirements: {details}
+            Include lighting, composition, camera angle and quality.
+            Return the prompt in English.
+            """
 
-        prompt = f"""
-        Create a professional image generation prompt.
+            with st.spinner("Prompt tayyorlanmoqda..."):
+                result = ask_ai(prompt)
 
-        Subject: {subject}
-        Art style: {art_style}
-        Lighting: {lighting}
-        Aspect ratio: {ratio}
-        Additional details: {details}
+            st.code(result)
 
-        Requirements:
-        - Highly detailed visual description.
-        - Professional composition.
-        - Realistic materials and textures where appropriate.
-        - High quality rendering.
-        - Clear camera and lighting direction.
-
-        Return:
-        1. English prompt.
-        2. Uzbek explanation.
-        3. Negative prompt.
-        """
-
-        with st.spinner("Prompt yaratilmoqda..."):
-            result = ask_ai(prompt)
-
-        st.markdown("### 🖼️ Tayyor prompt")
-        st.markdown(result)
-
-        st.download_button(
-            "📥 Promptni yuklab olish",
-            data=result,
-            file_name="JON_AI_Image_Prompt.txt",
-            mime="text/plain"
-        )
+            st.download_button(
+                "📥 Promptni yuklab olish",
+                result,
+                file_name="jon_ai_image_prompt.txt"
+            )
 
 
 # ============================================================
-# 14. EXCEL ANALYSIS
+# 12. EXCEL
 # ============================================================
 
 def render_excel():
-
     st.title("📈 JON AI — Excel Analysis")
 
-    st.write(
-        "Excel va CSV ma'lumotlarini tahlil qilish."
-    )
-
-    uploaded_file = st.file_uploader(
-        "Excel yoki CSV faylni yuklang",
+    uploaded = st.file_uploader(
+        "Excel yoki CSV fayl yuklang",
         type=["xlsx", "xls", "csv"]
     )
 
-    if uploaded_file:
-
+    if uploaded:
         try:
-
-            if uploaded_file.name.lower().endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
+            if uploaded.name.lower().endswith(".csv"):
+                df = pd.read_csv(uploaded)
             else:
-                df = pd.read_excel(uploaded_file)
+                df = pd.read_excel(uploaded)
 
-            st.success("Fayl muvaffaqiyatli yuklandi.")
+            st.dataframe(df, use_container_width=True)
 
-            st.subheader("📋 Ma'lumotlar jadvali")
-
-            st.dataframe(
-                df,
-                use_container_width=True
-            )
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                st.metric("Qatorlar", len(df))
-
-            with col2:
-                st.metric("Ustunlar", len(df.columns))
-
-            with col3:
-                st.metric(
-                    "Bo‘sh kataklar",
-                    int(df.isna().sum().sum())
-                )
-
-            st.subheader("📊 Statistik ma'lumotlar")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Qatorlar", len(df))
+            c2.metric("Ustunlar", len(df.columns))
+            c3.metric("Bo'sh kataklar", int(df.isna().sum().sum()))
 
             st.dataframe(
-                df.describe(include="all").transpose(),
+                df.describe(include="all").fillna(""),
                 use_container_width=True
             )
 
             if st.button("🤖 AI orqali tahlil qilish"):
+                prompt = (
+                    "Jadvalni tahlil qiling, tendensiyalar va xulosalar bering:\n"
+                    + df.head(30).to_csv(index=False)
+                )
 
-                sample = df.head(30).to_string()
-
-                prompt = f"""
-                Quyidagi jadvalni professional tahlil qil.
-
-                Ma'lumotlar:
-                {sample}
-
-                Quyidagilarni aniqlashga harakat qil:
-                1. Jadvalning umumiy mazmuni.
-                2. Muhim tendensiyalar.
-                3. Ehtimoliy muammolar.
-                4. Qiziqarli kuzatuvlar.
-                5. Amaliy tavsiyalar.
-
-                Faqat jadvalda mavjud ma'lumotlarga tayan.
-                Yetarli ma'lumot bo‘lmasa, buni ayt.
-                """
-
-                with st.spinner("AI ma'lumotlarni tahlil qilmoqda..."):
-                    result = ask_ai(prompt)
-
-                st.markdown("### 🧠 AI tahlili")
-                st.markdown(result)
-
-            csv_data = df.to_csv(index=False).encode("utf-8-sig")
+                with st.spinner("Tahlil qilinmoqda..."):
+                    st.markdown(ask_ai(prompt))
 
             st.download_button(
-                "📥 CSV faylini yuklab olish",
-                data=csv_data,
-                file_name="JON_AI_Export.csv",
-                mime="text/csv"
+                "📥 CSV yuklab olish",
+                df.to_csv(index=False).encode("utf-8-sig"),
+                file_name="jon_ai_analysis.csv"
             )
 
         except Exception as error:
-            st.error(f"Faylni o‘qishda xatolik: {error}")
+            st.error(f"Xatolik: {error}")
 
 
 # ============================================================
-# 15. TASK MANAGER
+# 13. TASKS
 # ============================================================
 
 def render_tasks():
+    st.title("📝 JON AI — Vazifalar")
 
-    st.title("📝 JON AI — Vazifalar boshqaruvi")
+    task_text = st.text_input("Yangi vazifa")
 
-    st.write(
-        "Kundalik vazifalaringizni rejalashtiring."
-    )
-
-    with st.form("new_task_form"):
-
-        task_text = st.text_input(
-            "Yangi vazifa",
-            placeholder="Masalan: JON AI loyihasini tekshirish"
-        )
-
-        priority = st.selectbox(
-            "Muhimlik darajasi",
-            ["Oddiy", "Muhim", "Juda muhim"]
-        )
-
-        submitted = st.form_submit_button(
-            "➕ Vazifa qo‘shish"
-        )
-
-    if submitted:
-
+    if st.button("➕ Vazifa qo'shish"):
         if task_text.strip():
-
             st.session_state.tasks.append({
-                "id": str(time.time_ns()),
                 "text": task_text.strip(),
-                "priority": priority,
                 "done": False
             })
-
-            st.success("Vazifa qo‘shildi.")
             st.rerun()
 
-        else:
-            st.warning("Vazifa matnini kiriting.")
+    for index, task in enumerate(st.session_state.tasks):
+        col1, col2 = st.columns([5, 1])
 
-    st.divider()
+        with col1:
+            checked = st.checkbox(
+                task["text"],
+                value=task["done"],
+                key=f"task_{index}"
+            )
+            st.session_state.tasks[index]["done"] = checked
 
-    if not st.session_state.tasks:
+        with col2:
+            if st.button("🗑", key=f"delete_{index}"):
+                st.session_state.tasks.pop(index)
+                st.rerun()
 
-        st.info("Hozircha vazifalar mavjud emas.")
+    completed = sum(
+        1 for task in st.session_state.tasks if task["done"]
+    )
 
-    else:
-
-        completed = sum(
-            1 for task in st.session_state.tasks
-            if task["done"]
-        )
-
-        total = len(st.session_state.tasks)
-
-        st.progress(
-            completed / total
-        )
-
-        st.write(
-            f"Bajarilgan: {completed} / {total}"
-        )
-
-        for task in list(st.session_state.tasks):
-
-            col1, col2, col3 = st.columns([6, 2, 1])
-
-            with col1:
-
-                checked = st.checkbox(
-                    task["text"],
-                    value=task["done"],
-                    key=f"task_{task['id']}"
-                )
-
-                if checked != task["done"]:
-
-                    task["done"] = checked
-
-                    st.rerun()
-
-            with col2:
-                st.caption(task["priority"])
-
-            with col3:
-
-                if st.button(
-                    "🗑️",
-                    key=f"delete_{task['id']}"
-                ):
-
-                    st.session_state.tasks = [
-                        item
-                        for item in st.session_state.tasks
-                        if item["id"] != task["id"]
-                    ]
-
-                    st.rerun()
-
-        if st.button("🧹 Barcha bajarilgan vazifalarni o‘chirish"):
-
-            st.session_state.tasks = [
-                task for task in st.session_state.tasks
-                if not task["done"]
-            ]
-
-            st.rerun()
+    if st.session_state.tasks:
+        st.progress(completed / len(st.session_state.tasks))
 
 
 # ============================================================
-# 16. CAMERA
+# 14. CAMERA
 # ============================================================
 
 def render_camera():
+    st.title("📷 JON AI — Kamera")
 
-    st.title("📷 JON AI — Camera Studio")
+    picture = st.camera_input("Rasmga olish")
 
-    st.write(
-        "Kamera orqali suratga oling va uni JON AI "
-        "bilan tahlil qilish uchun tayyorlang."
-    )
-
-    photo = st.camera_input(
-        "Kamerani ochish va suratga olish"
-    )
-
-    if photo:
-
-        st.image(
-            photo,
-            caption="Olingan surat",
-            use_container_width=True
-        )
-
-        st.success(
-            "Surat muvaffaqiyatli olindi."
-        )
-
-        st.info(
-            "Hozirgi versiyada kamera suratga olishni "
-            "qo‘llab-quvvatlaydi. Suratni AI orqali "
-            "tahlil qilish funksiyasi keyingi bosqichda "
-            "alohida ulanadi."
-        )
+    if picture:
+        st.image(picture, use_container_width=True)
 
         st.download_button(
-            "📥 Suratni yuklab olish",
-            data=photo.getvalue(),
-            file_name="JON_AI_Photo.jpg",
+            "📥 Rasmni yuklab olish",
+            picture.getvalue(),
+            file_name="jon_ai_camera.jpg",
             mime="image/jpeg"
         )
 
 
 # ============================================================
-# 17. CHARACTER STUDIO
+# 15. CHARACTER STUDIO
 # ============================================================
 
 def render_character():
-
-    st.title("👤 JON AI — Live Character Studio")
-
-    st.write(
-        "JON virtual personajining ko‘rinishini sozlang."
-    )
+    st.title("👤 JON AI — Character Studio")
 
     name = st.text_input(
         "Personaj nomi",
         value=st.session_state.character_name
     )
 
-    style_options = [
+    styles = [
         "Hologramma",
-        "Robot",
-        "Virtual inson",
+        "Realistik robot",
         "Multfilm uslubi",
-        "Fantastik"
+        "Fantastik",
+        "Virtual inson"
     ]
-
-    current_style = st.session_state.character_style
-
-    selected_index = (
-        style_options.index(current_style)
-        if current_style in style_options
-        else 0
-    )
 
     style = st.selectbox(
         "Personaj uslubi",
-        style_options,
-        index=selected_index
+        styles,
+        index=styles.index(st.session_state.character_style)
+        if st.session_state.character_style in styles else 0
     )
 
-    if st.button("💾 Sozlamalarni saqlash"):
-
-        st.session_state.character_name = (
-            name.strip() or "JON"
-        )
-
+    if st.button("💾 Saqlash"):
+        st.session_state.character_name = name.strip() or "JON"
         st.session_state.character_style = style
+        st.success("Sozlamalar saqlandi.")
 
-        st.success("Personaj sozlamalari saqlandi.")
-
-        st.rerun()
-
-    st.divider()
-
-    st.subheader("✨ Jonli personaj")
-
-    show_character(
-        height=520,
-        cinematic=False
-    )
+    show_character(height=580, cinematic=False)
 
     st.caption(
-        "Bu versiyada geometrik 3D personaj mavjud. "
-        "Haqiqiy inson mimikasi, ovoz va lab sinxronizatsiyasi "
-        "keyingi ishlab chiqish bosqichlarida qo‘shiladi."
+        "Haqiqiy yuz mimikasi uchun riglangan GLB/GLTF 3D model "
+        "va animatsiya tizimi kerak bo'ladi."
     )
 
 
 # ============================================================
-# 18. SETTINGS
+# 16. SETTINGS
 # ============================================================
 
 def render_settings():
-
     st.title("⚙️ JON AI — Sozlamalar")
-
-    st.subheader("🔐 Gemini API")
-
-    st.warning(
-        "API kalitingizni hech kimga yubormang va "
-        "GitHub kodiga joylashtirmang."
-    )
-
-    current_key = st.session_state.get(
-        "api_key", ""
-    )
 
     api_key = st.text_input(
         "Gemini API kaliti",
-        value=current_key,
-        type="password",
-        placeholder="Gemini API key"
+        value=st.session_state.api_key,
+        type="password"
     )
 
-    if st.button("💾 API kalitni saqlash"):
+    if st.button("🔐 API kalitni saqlash"):
+        st.session_state.api_key = api_key.strip()
+        st.success("API kalit joriy sessiyada saqlandi.")
 
-        if api_key.strip():
+    st.caption(
+        "Doimiy foydalanish uchun Streamlit Secrets'dan foydalaning."
+    )
 
-            st.session_state.api_key = api_key.strip()
-
-            st.success(
-                "API kalit joriy sessiya uchun saqlandi."
-            )
-
-        else:
-
-            st.warning(
-                "Iltimos, API kalitni kiriting."
-            )
-
-    if st.button("🗑️ Kiritilgan API kalitni tozalash"):
-
-        st.session_state.api_key = ""
-
-        st.success("Sessiyadagi API kalit tozalandi.")
-
-        st.rerun()
-
-    st.divider()
-
-    st.subheader("🧠 AI modeli")
-
-    model_options = [
-        DEFAULT_MODEL,
+    models = [
         "gemini-2.5-flash",
-        "gemini-2.5-pro"
+        "gemini-2.5-pro",
+        "gemini-2.0-flash"
     ]
 
-    current_model = st.session_state.get(
-        "model", DEFAULT_MODEL
+    current = st.session_state.get("model", DEFAULT_MODEL)
+
+    st.session_state.model = st.selectbox(
+        "Gemini modeli",
+        models,
+        index=models.index(current) if current in models else 0
     )
 
-    if current_model not in model_options:
-        model_options.insert(0, current_model)
-
-    selected_model = st.selectbox(
-        "Modelni tanlang",
-        model_options
-    )
-
-    if st.button("Modelni saqlash"):
-
-        st.session_state.model = selected_model
-
-        st.success("Model tanlovi saqlandi.")
-
-    st.divider()
-
-    st.subheader("🎬 Kirish animatsiyasi")
-
-    intro = st.toggle(
-        "Cinematic intro",
+    st.session_state.intro_enabled = st.toggle(
+        "Kirish animatsiyasi",
         value=st.session_state.intro_enabled
     )
 
-    st.session_state.intro_enabled = intro
+    st.write("JON AI versiyasi:", APP_VERSION)
 
-    st.divider()
 
-    st.subheader("📱 Ilova haqida")
-
-    st.write(f"JON AI LIVE versiyasi: {APP_VERSION}")
-
-    st.write(
-        "JON AI — sun'iy intellekt asosidagi "
-        "virtual yordamchi loyihasi."
-    )
 # ============================================================
-# 19. PREMIUM
+# 17. PREMIUM
 # ============================================================
 
 def render_premium():
-
-    st.title("💎 JON AI — Premium")
-
-    st.markdown("""
-    <div class="jon-hero">
-        <h1>JON AI PREMIUM</h1>
-        <p>Professional AI Creative & Intelligence Studio</p>
-        <p>Kelajak texnologiyalari bitta platformada.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.subheader("🚀 Rejalashtirilgan Premium imkoniyatlar")
+    st.title("💎 JON AI — Premium Studio")
 
     features = [
-        (
-            "🎨 AI Image Studio",
-            "Professional AI rasm yaratish va tahrirlash."
-        ),
-        (
-            "🎬 AI Video Studio",
-            "AI yordamida video yaratish va montaj."
-        ),
-        (
-            "🎵 AI Music Studio",
-            "Original musiqa va fon musiqalarini yaratish."
-        ),
-        (
-            "👤 AI Character Animation",
-            "3D personajlar, mimika va animatsiyalar."
-        ),
-        (
-            "🎞️ Movie Maker",
-            "Ssenariy, sahna, ovoz va musiqa bilan video loyihalar."
-        ),
-        (
-            "🏢 Professional Branding",
-            "Kompaniya logotiplari va brend dizayni."
-        ),
-        (
-            "🖼️ Photo to Movie",
-            "Rasmlardan videolar yaratish."
-        ),
-        (
-            "🎭 Photo to Cartoon",
-            "Rasmlarni multfilm uslubiga o‘zgartirish."
-        ),
-        (
-            "🎙️ Voice Assistant",
-            "Ovozli suhbat va nutq sintezini qo‘llash."
-        )
+        ("🎬", "AI Video Studio", "AI video yaratish va montaj"),
+        ("🖼️", "AI Image Studio", "Professional tasvirlar"),
+        ("🎵", "AI Music Studio", "Original musiqa"),
+        ("👤", "AI Character Animation", "3D personaj animatsiyasi"),
+        ("🎥", "Movie Maker", "Ssenariy asosida video"),
+        ("🏢", "Branding Studio", "Logo va brending"),
+        ("🎞️", "Photo to Movie", "Rasmlardan video"),
+        ("🎨", "Photo to Cartoon", "Suratlarni multfilmga aylantirish"),
+        ("🎙️", "Voice Assistant", "Ovozli yordamchi")
     ]
 
-    for title, description in features:
-
+    for icon, title, description in features:
         st.markdown(
             f"""
-            <div class="jon-card" style="margin-bottom:12px;">
-                <h3>{title}</h3>
-                <p>{description}</p>
+            <div class="feature-card">
+                <span style="font-size:25px">{icon}</span>
+                <b style="margin-left:10px">{title}</b>
+                <p style="color:#9bb8df">{description}</p>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-    st.info(
-        "Diqqat: yuqoridagi Premium imkoniyatlar "
-        "ushbu kodda hozircha reja sifatida ko‘rsatilgan. "
-        "Ularni ishlatish uchun tegishli AI xizmatlari, "
-        "API va media modullari alohida ulanadi."
-    )
+    st.info("Premium funksiyalar bosqichma-bosqich integratsiya qilinadi.")
 
 
 # ============================================================
-# 20. MAIN NAVIGATION
+# 18. SIDEBAR
 # ============================================================
 
-def main():
-
+def render_sidebar():
     with st.sidebar:
-
         st.markdown(
             """
-            <h1 style="
-                color:#5deaff;
-                text-align:center;
-                letter-spacing:3px;
-            ">💎 JON AI</h1>
-            <p style="
-                color:#9ccce9;
-                text-align:center;
-            ">LIVE INTELLIGENCE</p>
+            <div style="text-align:center;padding:15px 0">
+                <div style="font-size:38px">💎</div>
+                <div style="font-family:Orbitron;font-size:21px;color:#64caff">
+                    JON AI
+                </div>
+                <div style="font-size:10px;letter-spacing:3px;color:#8ca9d1">
+                    LIVE INTELLIGENCE
+                </div>
+            </div>
             """,
             unsafe_allow_html=True
         )
 
-        st.divider()
+        st.markdown("---")
 
-        selected_page = st.radio(
+        selected = st.radio(
             "Navigatsiya",
             PAGES,
-            index=PAGES.index(
-                st.session_state.page
-            ),
-            key="main_navigation"
+            index=PAGES.index(st.session_state.page)
+            if st.session_state.page in PAGES else 0
         )
 
-        st.session_state.page = selected_page
+        st.session_state.page = selected
 
-        st.divider()
+        st.markdown("---")
+        st.caption(f"JON AI LIVE {APP_VERSION}")
 
-        st.caption(
-            f"JON AI LIVE v{APP_VERSION}"
-        )
 
-        st.caption(
-            "Professional Virtual Intelligence"
-        )
+# ============================================================
+# 19. MAIN
+# ============================================================
+
+def main():
+    render_sidebar()
 
     page = st.session_state.page
 
-    if page == PAGES[0]:
+    routes = {
+        "🏠 Bosh sahifa": render_home,
+        "🤖 AI Chat": render_chat,
+        "🎓 Ta'lim markazi": render_education,
+        "📊 PowerPoint": render_powerpoint,
+        "🌐 Tarjimon": render_translator,
+        "🎨 Rasm prompti": render_image_prompt,
+            
 
-        render_home()
-
-    elif page == PAGES[1]:
-
-        render_chat()
-
-    elif page == PAGES[2]:
-
-        render_education()
-
-    elif page == PAGES[3]:
-
-        render_powerpoint()
-
-    elif page == PAGES[4]:
-
-        render_translator()
-
-    elif page == PAGES[5]:
-
-        render_image_prompt()
-
-    elif page == PAGES[6]:
-
+    elif page == "📈 Excel tahlil":
         render_excel()
 
-    elif page == PAGES[7]:
-
+    elif page == "📝 Vazifalar":
         render_tasks()
 
-    elif page == PAGES[8]:
-
+    elif page == "📷 Kamera":
         render_camera()
 
-    elif page == PAGES[9]:
-
+    elif page == "👤 Personaj":
         render_character()
 
-    elif page == PAGES[10]:
-
+    elif page == "⚙️ Sozlamalar":
         render_settings()
 
-    elif page == PAGES[11]:
-
+    elif page == "💎 Premium":
         render_premium()
-
-
+    
 # ============================================================
-# 21. START APPLICATION
+# 20. ILOVANI ISHGA TUSHIRISH
 # ============================================================
 
 if __name__ == "__main__":
-
-    try:
-
-        main()
-
-    except Exception as error:
-
-        st.error(
-            "JON AI ishga tushishida xatolik yuz berdi."
-        )
-
-        st.exception(error)
+    main()
