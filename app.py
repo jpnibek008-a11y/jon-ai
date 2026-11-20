@@ -1441,41 +1441,27 @@ def render_sidebar():
 # 19. MAIN
 # ============================================================
 
+
 def main():
-    render_sidebar()
-
-    page = st.session_state.page
-
-    routes = {}
+    routes = {
         "🏠 Bosh sahifa": render_home,
         "🤖 AI Chat": render_chat,
         "🎓 Ta'lim markazi": render_education,
         "📊 PowerPoint": render_powerpoint,
         "🌐 Tarjimon": render_translator,
         "🎨 Rasm prompti": render_image_prompt,
-            
+        "📈 Excel tahlil": render_excel,
+        "📝 Vazifalar": render_tasks,
+        "📷 Kamera": render_camera,
+        "👤 Personaj": render_character,
+        "⚙️ Sozlamalar": render_settings,
+        "💎 Premium": render_premium,
+    }
 
-    elif page == "📈 Excel tahlil":
-        render_excel()
+    page = st.sidebar.radio("Navigatsiya", list(routes.keys()))
+    routes[page]()
 
-    elif page == "📝 Vazifalar":
-        render_tasks()
-
-    elif page == "📷 Kamera":
-        render_camera()
-
-    elif page == "👤 Personaj":
-        render_character()
-
-    elif page == "⚙️ Sozlamalar":
-        render_settings()
-
-    elif page == "💎 Premium":
-        render_premium()
-    
-# ============================================================
-# 20. ILOVANI ISHGA TUSHIRISH
-# ============================================================
 
 if __name__ == "__main__":
     main()
+    
