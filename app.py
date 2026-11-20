@@ -22,7 +22,7 @@ from pptx import Presentation
 # ============================================================
 
 APP_VERSION = "8.0"
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-3.5-flash"
 
 st.set_page_config(
     page_title="JON AI LIVE",
