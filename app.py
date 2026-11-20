@@ -691,26 +691,44 @@ def render_settings():
 
     st.title("⚙️ JON AI sozlamalari")
 
+    st.subheader("Gemini API integratsiyasi")
+
     st.text_input(
         "Gemini API kaliti",
         type="password",
-        key="api_key"
+        key="api_input",
+        placeholder="Gemini API kalitini kiriting"
     )
 
-    if st.button("API ulanishini tekshirish"):
-        with st.spinner("Tekshirilmoqda..."):
-            answer=ask_ai("Faqat OK deb javob ber.")
+    if st.button("💾 API kalitini saqlash"):
+        key = st.session_state.get("api_input", "").strip()
+
+        if key:
+            st.session_state["api_key"] = key
+            st.success("API kaliti saqlandi!")
+        else:
+            st.warning("API kalitini kiriting.")
+
+    if st.button("🔌 API ulanishini tekshirish"):
+        with st.spinner("JON AI Gemini bilan bog'lanmoqda..."):
+            answer = ask_ai("Faqat OK deb javob ber.")
+
         if answer.startswith("Gemini xatosi"):
             st.error(answer)
         elif "kaliti topilmadi" in answer:
             st.warning(answer)
         else:
-            st.success("Gemini API muvaffaqiyatli ulandi.")
-            st.caption(answer[:200])
+            st.success("Gemini API muvaffaqiyatli ulandi!")
+            st.write(answer)
 
-    st.caption("API kalitini GitHub kodiga yozmang.")
+    if st.session_state.get("api_key"):
+        st.success("API kaliti sessiyada mavjud.")
+    else:
+        st.warning("API kaliti hali saqlanmagan.")
 
-
+    st.caption(
+        "Maxfiylik: API kalitingizni GitHub kodiga joylashtirmang."
+    )
 # ============================================================
 # PREMIUM
 # ============================================================
