@@ -296,71 +296,53 @@ def explain_api_error(error):
 # 6. GEMINI AI CORE
 # ============================================================
 
-def ask_ai(prompt, history=None):
+import time
+from google import genai
 
-    try:
+def ask_ai(prompt, extra_context="", history=None):
+    client = genai.Client(api_key=get_api_key())
 
-        client = get_client()
+    models = [
+        "gemini-3.5-flash",
+        "gemini-2.5-flash"
+    ]
 
-        conversation = []
+    full_prompt = f"""
+    {JON_CORE}
 
-        for item in (history or [])[-12:]:
+    {extra_context}
 
-            role = item.get("role", "user")
+    Foydalanuvchi: {prompt}
+    """
 
-            content = item.get("content", "")
+    last_error = None
 
-            if role not in ("user", "assistant"):
-                continue
+    for model in models:
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=full_prompt
+                )
+                return response.text
 
-            conversation.append(
-                f"{role.upper()}: {content}"
-            )
+            except Exception as e:
+                last_error = e
+                error_text = str(e)
 
-        history_text = "\n\n".join(conversation)
+                if "503" in error_text or "UNAVAILABLE" in error_text:
+                    time.sleep(2 * (attempt + 1))
+                    continue
 
-        full_prompt = f"""
-{JON_CORE}
+                if "429" in error_text:
+                    return "Gemini API kvotasi tugagan. Limitni tekshiring."
 
-OLDINGI SUHBAT:
+                break
 
-{history_text}
-
-YANGI TOPSHIRIQ:
-
-{prompt}
-
-JON AI JAVOBI:
-"""
-
-        model = st.session_state.get(
-            "model", DEFAULT_MODEL
-        )
-
-        response = client.models.generate_content(
-            model=model,
-            contents=full_prompt,
-            config={
-                "temperature": 0.7,
-                "max_output_tokens": 4096
-            }
-        )
-
-        answer = response.text
-
-        if not answer:
-            return "JON AI javob qaytarmadi."
-
-        return answer.strip()
-
-    except Exception as error:
-
-        return (
-            "JON AI xatosi:\n\n"
-            + explain_api_error(error)
-        )
-
-
+    return (
+        "JON AI vaqtinchalik band. "
+        "Iltimos, birozdan keyin qayta urinib ko‘ring."
+    )
 # ============================================================
 # 7. 3D LIVE CHARACTER
 # ============================================================
