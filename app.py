@@ -1446,7 +1446,7 @@ def main():
 
     page = st.session_state.page
 
-    routes = {
+    routes = {}
         "🏠 Bosh sahifa": render_home,
         "🤖 AI Chat": render_chat,
         "🎓 Ta'lim markazi": render_education,
