@@ -23,7 +23,7 @@ from pptx.util import Inches, Pt
 # ============================================================
 
 APP_VERSION = "9.0"
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 st.set_page_config(
     page_title="JON AI LIVE 9.0",
@@ -1304,9 +1304,8 @@ def render_settings():
     )
 
     models = [
-        "gemini-2.5-flash",
-        "gemini-2.5-pro",
-        "gemini-2.0-flash"
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite"
     ]
 
     current_model = st.session_state.model
