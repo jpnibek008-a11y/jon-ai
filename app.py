@@ -675,99 +675,102 @@ canvas{display:block;width:100%;height:100%}
 
  const count=innerWidth<600?250:500;
  const positions=new Float32Array(count*3);
-    
+ 
+def render_powerpoint():
+    st.title("📊 Professional PowerPoint Studio")
+
+    title = st.text_input("Taqdimot mavzusi")
+    count = st.slider("Slaydlar soni", 3, 15, 7)
+
+    language = st.selectbox(
+        "Til",
+        ["O'zbek", "English", "Русский"]
+    )
+
+    style = st.selectbox(
+        "Dizayn",
+        ["Professional", "Minimal", "Technology", "Education"]
+    )
+
+    if st.button("✨ Taqdimot yaratish", use_container_width=True):
+        if not title.strip():
+            st.warning("Mavzuni kiriting.")
+            return
+
         prompt = f"""
-        "{title}" mavzusida {count} slaydli PowerPoint taqdimoti uchun
-        mazmun tayyorla.
-
+        {title} mavzusida {count} ta slayd uchun taqdimot tayyorla.
         Til: {language}
-        Dizayn uslubi: {style}
+        Uslub: {style}
 
-        Natijani quyidagi formatda ber:
+        Har bir slaydni quyidagi formatda yoz:
         SLIDE 1: Sarlavha
-        - Birinchi fikr
-        - Ikkinchi fikr
+        CONTENT: Mazmun
 
-        Har bir slayd uchun sarlavha va 3-5 ta qisqa mazmun yoz.
+        Har bir slaydni alohida ajrat.
         """
 
-        with st.spinner("Taqdimot mazmuni tayyorlanmoqda..."):
-            content = ask_ai(prompt)
+        with st.spinner("Slaydlar tayyorlanmoqda..."):
+            answer = ask_ai(prompt)
 
-        st.markdown(content)
+        st.markdown(answer)
 
         presentation = Presentation()
         presentation.slide_width = Inches(13.333)
         presentation.slide_height = Inches(7.5)
 
-        slides_data = re.split(
-            r"(?=SLIDE\s+\d+\s*:)",
-            content,
+        sections = re.split(
+            r"SLIDE\s*\d+\s*:",
+            answer,
             flags=re.IGNORECASE
         )
 
-        for index, slide_text in enumerate(slides_data):
-            if not slide_text.strip():
-                continue
+        sections = [s.strip() for s in sections if s.strip()]
+
+        if not sections:
+            sections = [answer]
+
+        for section in sections[:count]:
+            lines = section.splitlines()
+            slide_title = lines[0][:100] if lines else title
+            body = "\n".join(lines[1:]) if len(lines) > 1 else section
 
             slide = presentation.slides.add_slide(
                 presentation.slide_layouts[6]
             )
-
-            background = slide.background
-            fill = background.fill
-            fill.solid()
-            fill.fore_color.rgb = RGBColor(8, 17, 40)
-
-            lines = [
-                line.strip()
-                for line in slide_text.splitlines()
-                if line.strip()
-            ]
-
-            heading = lines[0] if lines else f"Slayd {index + 1}"
 
             title_box = slide.shapes.add_textbox(
                 Inches(0.7), Inches(0.5),
                 Inches(12), Inches(1.0)
             )
 
-            title_frame = title_box.text_frame
-            title_frame.text = heading
+            tf = title_box.text_frame
+            tf.text = slide_title
 
-            title_run = title_frame.paragraphs[0].runs[0]
-            title_run.font.size = Pt(30)
-            title_run.font.bold = True
-            title_run.font.color.rgb = RGBColor(70, 205, 255)
+            for paragraph in tf.paragraphs:
+                paragraph.font.size = Pt(28)
+                paragraph.font.bold = True
 
             body_box = slide.shapes.add_textbox(
-                Inches(1.0), Inches(2.0),
-                Inches(11.3), Inches(4.5)
+                Inches(0.8), Inches(1.8),
+                Inches(11.8), Inches(4.8)
             )
 
-            body_frame = body_box.text_frame
-            body_frame.word_wrap = True
+            body_box.text_frame.text = body[:3000]
 
-            for line in lines[1:]:
-                paragraph = body_frame.add_paragraph()
-                paragraph.text = line
-                paragraph.font.size = Pt(21)
-                paragraph.font.color.rgb = RGBColor(235, 243, 255)
-                paragraph.space_after = Pt(14)
+            for paragraph in body_box.text_frame.paragraphs:
+                paragraph.font.size = Pt(20)
 
         output = BytesIO()
         presentation.save(output)
         output.seek(0)
 
         st.download_button(
-            "📥 PowerPoint faylini yuklab olish",
+            "📥 PowerPoint yuklab olish",
             data=output,
             file_name="JON_AI_Presentation.pptx",
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             use_container_width=True
         )
-
-
 # ============================================================
 # 11. TRANSLATOR
 # ============================================================
