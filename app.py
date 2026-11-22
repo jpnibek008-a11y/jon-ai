@@ -1,6 +1,5 @@
-
 # ============================================================
-# JON AI LIVE 9.0 — NEXT GENERATION VIRTUAL INTELLIGENCE
+# JON AI LIVE 9.1 — RESPONSIVE DUAL CHARACTER EXPERIENCE
 # Streamlit + Gemini AI + Three.js Dual 3D Characters
 # ============================================================
 
@@ -22,11 +21,11 @@ from pptx.util import Inches, Pt
 # 1. CONFIGURATION
 # ============================================================
 
-APP_VERSION = "9.0"
+APP_VERSION = "9.1"
 DEFAULT_MODEL = "gemini-3.8-flash"
 
 st.set_page_config(
-    page_title="JON AI LIVE 9.0",
+    page_title="JON AI LIVE 9.1",
     page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -356,7 +355,17 @@ canvas{display:block;width:100%;height:100%}
 }
 .label{
  text-align:center;color:#c5e8ff;
- font-size:11px;letter-spacing:3px
+ font-size:11px;letter-spacing:3px;
+ min-width:0;flex:1
+}
+@media(max-width:600px){
+ .brand{top:13px}
+ .brand h1{font-size:27px;letter-spacing:5px}
+ .brand span{font-size:7px;letter-spacing:2px}
+ .status{top:69px;font-size:9px;letter-spacing:2px}
+ .labels{bottom:13px;padding:0 8px;gap:4px}
+ .label{font-size:10px;letter-spacing:2px}
+ .label small{font-size:7px;letter-spacing:1px}
 }
 .label small{
  display:block;margin-top:5px;color:#7b9dc9;
@@ -409,7 +418,8 @@ canvas{display:block;width:100%;height:100%}
  const camera=new THREE.PerspectiveCamera(
   42,box.clientWidth/box.clientHeight,0.1,100
  );
- camera.position.set(0,1.0,10.8);
+ camera.position.set(0,0.65,10.8);
+ camera.lookAt(0,0,0);
 
  const renderer=new THREE.WebGLRenderer({
   antialias:true,alpha:true
@@ -496,7 +506,7 @@ canvas{display:block;width:100%;height:100%}
 
  function createPerson(isAndroid){
   const root=new THREE.Group();
-  root.position.x=isAndroid?2.0:-2.0;
+  root.position.x=isAndroid?1.85:-1.85;
   scene.add(root);
 
   const body=new THREE.Group();
@@ -507,8 +517,7 @@ canvas{display:block;width:100%;height:100%}
 
   cylinder(body,-0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
   cylinder(body,0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
-
-  sphere(body,-0.22,-1.48,0.1,0.2,0.12,0.3,blue);
+      sphere(body,-0.22,-1.48,0.1,0.2,0.12,0.3,blue);
   sphere(body,0.22,-1.48,0.1,0.2,0.12,0.3,blue);
 
   sphere(body,0,-0.05,0,0.57,0.78,0.32,bodyMat);
@@ -567,18 +576,51 @@ canvas{display:block;width:100%;height:100%}
  const human=createPerson(false);
  const android=createPerson(true);
 
+ // Portrait screens need a narrower character spread and a more distant camera.
+ function fitScene(){
+  const w=Math.max(box.clientWidth,1);
+  const h=Math.max(box.clientHeight,1);
+  const aspect=w/h;
+  camera.aspect=aspect;
+
+  if(aspect<0.62){
+   camera.position.set(0,0.55,14.4);
+   human.root.position.x=-1.22;
+   android.root.position.x=1.22;
+   human.root.scale.setScalar(0.91);
+   android.root.scale.setScalar(0.91);
+  }else if(aspect<0.9){
+   camera.position.set(0,0.55,12.5);
+   human.root.position.x=-1.48;
+   android.root.position.x=1.48;
+   human.root.scale.setScalar(0.96);
+   android.root.scale.setScalar(0.96);
+  }else{
+   camera.position.set(0,0.65,10.8);
+   human.root.position.x=-1.85;
+   android.root.position.x=1.85;
+   human.root.scale.setScalar(1);
+   android.root.scale.setScalar(1);
+  }
+
+  camera.lookAt(0,0,0);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+ }
+ fitScene();
+
  const energyRings=[];
 
  for(let i=0;i<5;i++){
   energyRings.push(
    ring(scene,2.3+i*0.24,0.008,
     i%2?0x9655ff:0x36cfff,
-    0,-0.1,-1.2,Math.PI/2)
+    0,-1.15,-1.2,Math.PI/2)
   );
  }
 
  const portal=new THREE.Group();
- portal.position.set(0,0.1,-1.5);
+ portal.position.set(0,-1.35,-1.5);
  scene.add(portal);
 
  ring(portal,3.15,0.035,0x4d9fff,0,0,0,Math.PI/2);
@@ -663,13 +705,7 @@ canvas{display:block;width:100%;height:100%}
   intro.remove();
  }
 
- window.addEventListener("resize",()=>{
-  const w=box.clientWidth;
-  const h=box.clientHeight;
-  camera.aspect=w/h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w,h);
- });
+ window.addEventListener("resize",fitScene);
 
 })();
 </script>
@@ -729,7 +765,7 @@ def render_home():
         unsafe_allow_html=True
     )
 
-    show_character(570)
+    show_character(620)
 
     st.markdown("## ✨ JON AI imkoniyatlari")
 
@@ -754,10 +790,8 @@ def render_home():
                 </div>
                 """,
                 unsafe_allow_html=True
-            )
-
-
-# ============================================================
+    )
+            # ============================================================
 # 8. AI CHAT
 # ============================================================
 
@@ -795,7 +829,7 @@ def render_chat():
             with st.spinner("JON AI fikrlamoqda..."):
                 answer = ask_ai(prompt, history=history)
                 st.markdown(answer)
-                
+
         st.session_state.messages.append({
             "role": "assistant",
             "content": answer
@@ -1144,9 +1178,7 @@ def render_excel():
 
         except Exception as error:
             st.error(f"Faylni o'qishda xato: {error}")
-
-
-# ============================================================
+            # ============================================================
 # 14. TASK MANAGER
 # ============================================================
 
@@ -1304,8 +1336,8 @@ def render_settings():
     )
 
     models = [
-    "gemini-3.8-flash",
-    "gemini-3.5-flash-lite"
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite"
     ]
 
     current_model = st.session_state.model
@@ -1475,11 +1507,10 @@ st.markdown("---")
 st.markdown(
     """
     <div style="text-align:center;color:#7895bd;padding:12px">
-        💎 JON AI LIVE 9.0<br>
+        💎 JON AI LIVE 9.1<br>
         NEXT GENERATION VIRTUAL INTELLIGENCE<br>
         <small>Designed for the future.</small>
     </div>
     """,
     unsafe_allow_html=True
             )
-    
