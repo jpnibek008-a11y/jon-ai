@@ -371,6 +371,8 @@ def check_model():
     except Exception as error:
         st.error(explain_api_error(error))
         return False
+
+
 # ============================================================
 # 5. THREE.JS — HUMAN + ANDROID
 # ============================================================
@@ -675,414 +677,6 @@ canvas{display:block;width:100%;height:100%}
 
  const count=innerWidth<600?250:500;
  const positions=new Float32Array(count*3);
- 
-def render_powerpoint():
-    st.title("📊 Professional PowerPoint Studio")
-
-    title = st.text_input("Taqdimot mavzusi")
-    count = st.slider("Slaydlar soni", 3, 15, 7)
-
-    language = st.selectbox(
-        "Til",
-        ["O'zbek", "English", "Русский"]
-    )
-
-    style = st.selectbox(
-        "Dizayn",
-        ["Professional", "Minimal", "Technology", "Education"]
-    )
-
-    if st.button("✨ Taqdimot yaratish", use_container_width=True):
-        if not title.strip():
-            st.warning("Mavzuni kiriting.")
-            return
-
-        prompt = f"""
-        {title} mavzusida {count} ta slayd uchun taqdimot tayyorla.
-        Til: {language}
-        Uslub: {style}
-
-        Har bir slaydni quyidagi formatda yoz:
-        SLIDE 1: Sarlavha
-        CONTENT: Mazmun
-
-        Har bir slaydni alohida ajrat.
-        """
-
-        with st.spinner("Slaydlar tayyorlanmoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown(answer)
-
-        presentation = Presentation()
-        presentation.slide_width = Inches(13.333)
-        presentation.slide_height = Inches(7.5)
-
-        sections = re.split(
-            r"SLIDE\s*\d+\s*:",
-            answer,
-            flags=re.IGNORECASE
-        )
-
-        sections = [s.strip() for s in sections if s.strip()]
-
-        if not sections:
-            sections = [answer]
-
-        for section in sections[:count]:
-            lines = section.splitlines()
-            slide_title = lines[0][:100] if lines else title
-            body = "\n".join(lines[1:]) if len(lines) > 1 else section
-
-            slide = presentation.slides.add_slide(
-                presentation.slide_layouts[6]
-            )
-
-            title_box = slide.shapes.add_textbox(
-                Inches(0.7), Inches(0.5),
-                Inches(12), Inches(1.0)
-            )
-
-            tf = title_box.text_frame
-            tf.text = slide_title
-
-            for paragraph in tf.paragraphs:
-                paragraph.font.size = Pt(28)
-                paragraph.font.bold = True
-
-            body_box = slide.shapes.add_textbox(
-                Inches(0.8), Inches(1.8),
-                Inches(11.8), Inches(4.8)
-            )
-
-            body_box.text_frame.text = body[:3000]
-
-            for paragraph in body_box.text_frame.paragraphs:
-                paragraph.font.size = Pt(20)
-
-        output = BytesIO()
-        presentation.save(output)
-        output.seek(0)
-
-        st.download_button(
-            "📥 PowerPoint yuklab olish",
-            data=output,
-            file_name="JON_AI_Presentation.pptx",
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            use_container_width=True
-        )
-# ============================================================
-# 11. TRANSLATOR
-# ============================================================
-
-def render_translator():
-    st.title("🌐 JON AI — Professional Translator")
-
-    mode = st.radio(
-        "Tarjima turi",
-        ["Zamonaviy tillar", "Qadimgi tillar"],
-        horizontal=True
-    )
-
-    if mode == "Zamonaviy tillar":
-        languages = [
-            "O'zbek", "English", "Русский", "Türkçe",
-            "العربية", "中文", "日本語", "한국어",
-            "Français", "Deutsch", "Español", "Italiano"
-        ]
-    else:
-        languages = [
-            "Classical Latin",
-            "Ancient Greek",
-            "Sanskrit",
-            "Biblical Hebrew",
-            "Aramaic",
-            "Ancient Egyptian hieroglyphs",
-            "Akkadian",
-            "Sumerian",
-            "Old Turkic runic"
-        ]
-
-    source_language = st.selectbox(
-        "Qaysi tildan?",
-        ["Avtomatik aniqlash"] + languages
-    )
-
-    target_language = st.selectbox(
-        "Qaysi tilga?",
-        languages
-    )
-
-    text_input = st.text_area(
-        "Tarjima qilinadigan matn",
-        height=180
-    )
-
-    if mode == "Qadimgi tillar":
-        st.info(
-            "Qadimgi tillar tarjimasida ayrim so'zlarning ma'nosi "
-            "taxminiy bo'lishi mumkin. JON AI buni alohida ko'rsatadi."
-        )
-
-    if st.button("🌍 Tarjima qilish", use_container_width=True):
-        if not text_input.strip():
-            st.warning("Tarjima uchun matn kiriting.")
-            return
-
-        if mode == "Qadimgi tillar":
-            prompt = f"""
-            Sen qadimgi tillar bo'yicha ehtiyotkor tarjimon bo'l.
-
-            Manba tili: {source_language}
-            Maqsad tili: {target_language}
-
-            Matn:
-            {text_input}
-
-            Quyidagi tartibda javob ber:
-            1. Tarjima.
-            2. So'zma-so'z tahlil.
-            3. Talaffuz yoki transliteratsiya.
-            4. Tarixiy va grammatik izoh.
-            5. Qaysi joylari aniq, qaysilari taxminiy ekanini ko'rsat.
-
-            Mavjud bo'lmagan qadimgi so'z yoki yozuvni o'ylab topma.
-            Ishonchli ma'lumot bo'lmasa, buni ochiq ayt.
-            """
-        else:
-            prompt = f"""
-            Matnni {source_language} tilidan {target_language} tiliga
-            tabiiy va mazmunini saqlagan holda tarjima qil.
-
-            Matn:
-            {text_input}
-            """
-
-        with st.spinner("Tarjima qilinmoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown("### Natija")
-        st.markdown(answer)
-
-        st.session_state.last_answer = answer
-
-        st.download_button(
-            "📥 Tarjimani TXT shaklida yuklab olish",
-            data=answer,
-            file_name="JON_AI_translation.txt",
-            mime="text/plain"
-        )
-
-
-# ============================================================
-# 12. IMAGE PROMPT STUDIO
-# ============================================================
-
-def render_image_prompt():
-    st.title("🎨 JON AI — Image Prompt Studio")
-
-    subject = st.text_input(
-        "Rasm mavzusi",
-        placeholder="Masalan: kelajakdagi aqlli shahar"
-    )
-
-    style = st.selectbox(
-        "Rasm uslubi",
-        [
-            "Photorealistic",
-            "Cinematic",
-            "3D Render",
-            "Anime",
-            "Digital Art",
-            "Fantasy",
-            "Minimalist",
-            "Corporate"
-        ]
-    )
-
-    ratio = st.selectbox(
-        "Rasm o'lchami",
-        ["1:1", "16:9", "9:16", "4:3", "3:2"]
-    )
-
-    details = st.text_area("Qo'shimcha tafsilotlar")
-
-    if st.button("✨ Prompt yaratish", use_container_width=True):
-        if not subject.strip():
-            st.warning("Rasm mavzusini kiriting.")
-            return
-
-        prompt = f"""
-        Professional image-generation prompt yoz.
-
-        Mavzu: {subject}
-        Uslub: {style}
-        Aspect ratio: {ratio}
-        Tafsilotlar: {details}
-
-        Natijada:
-        - Ingliz tilidagi tayyor prompt.
-        - Yorug'lik va kamera tavsifi.
-        - Ranglar va kompozitsiya.
-        - Negative prompt.
-
-        Prompt aniq, batafsil va professional bo'lsin.
-        """
-
-        with st.spinner("Prompt yaratilmoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown(answer)
-
-        st.session_state.copied_prompt = answer
-
-        st.code(answer, language="text")
-
-        st.button(
-            "📋 Promptni nusxalash",
-            on_click=st.session_state.update,
-            args=({"copied_prompt": answer},)
-        )
-
-
-# ============================================================
-# 13. EXCEL ANALYSIS
-# ============================================================
-
-def render_excel():
-    st.title("📈 JON AI — Excel Data Analysis")
-
-    uploaded = st.file_uploader(
-        "Excel yoki CSV fayl yuklang",
-        type=["xlsx", "xls", "csv"]
-    )
-
-    if not uploaded:
-        st.info("Tahlil qilish uchun fayl yuklang.")
-        return
-
-    try:
-        if uploaded.name.lower().endswith(".csv"):
-            df = pd.read_csv(uploaded)
-        else:
-            df = pd.read_excel(uploaded)
-
-        st.success("Fayl muvaffaqiyatli o'qildi.")
-
-        st.markdown("### Jadval")
-        st.dataframe(df, use_container_width=True)
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Qatorlar", len(df))
-        c2.metric("Ustunlar", len(df.columns))
-        c3.metric("Bo'sh qiymatlar", int(df.isna().sum().sum()))
-
-        st.markdown("### Statistik ma'lumot")
-        st.dataframe(
-            df.describe(include="all").fillna(""),
-            use_container_width=True
-        )
-
-        question = st.text_area(
-            "JON AI ga qanday tahlil kerak?",
-            placeholder="Jadvaldagi asosiy tendensiyalarni tushuntir..."
-        )
-
-        if st.button("🤖 AI bilan tahlil qilish"):
-            sample = df.head(40).to_string()
-
-            prompt = f"""
-            Quyidagi jadvalni tahlil qil.
-
-            Ustunlar: {list(df.columns)}
-            Qatorlar soni: {len(df)}
-
-            Namuna:
-            {sample}
-
-            Foydalanuvchi talabi:
-            {question}
-
-            Xulosalarni dalillarga asosla.
-            Yetishmayotgan ma'lumotni o'ylab topma.
-            """
-
-            with st.spinner("Jadval tahlil qilinmoqda..."):
-                answer = ask_ai(prompt)
-
-            st.markdown(answer)
-
-        csv_data = df.to_csv(index=False).encode("utf-8")
-
-        st.download_button(
-            "📥 CSV faylni yuklab olish",
-            data=csv_data,
-            file_name="JON_AI_data.csv",
-            mime="text/csv"
-        )
-
-    except Exception as error:
-        st.error(f"Faylni o'qishda xatolik: {error}")
-
-
-# ============================================================
-# 14. TASK MANAGER
-# ============================================================
-
-def render_tasks():
-    st.title("📝 JON AI — Vazifalar boshqaruvi")
-
-    task_text = st.text_input(
-        "Yangi vazifa",
-        placeholder="Masalan: JON AI kodini tekshirish"
-    )
-
-    priority = st.selectbox(
-        "Muhimlik darajasi",
-        ["Oddiy", "Muhim", "Juda muhim"]
-    )
-
-    if st.button("➕ Vazifa qo'shish"):
-        if task_text.strip():
-            st.session_state.tasks.append({
-                "text": task_text.strip(),
-                "priority": priority,
-                "done": False
-            })
-            st.success("Vazifa qo'shildi.")
-            st.rerun()
-
-    st.markdown("---")
-    st.markdown("### Mening vazifalarim")
-
-    if not st.session_state.tasks:
-        st.info("Hozircha vazifalar yo'q.")
-        return
-
-    for index, task in enumerate(st.session_state.tasks):
-        col1, col2 = st.columns([5, 1])
-
-        with col1:
-            checked = st.checkbox(
-                f"{task['text']} — {task['priority']}",
-                value=task["done"],
-                key=f"task_{index}"
-            )
-            st.session_state.tasks[index]["done"] = checked
-
-        with col2:
-            if st.button("🗑️", key=f"delete_task_{index}"):
-                st.session_state.tasks.pop(index)
-                st.rerun()
-
-    completed = sum(
-        1 for task in st.session_state.tasks if task["done"]
-    )
-
-    st.progress(completed / len(st.session_state.tasks))
-    st.caption(
-        f"{completed} / {len(st.session_state.tasks)} vazifa bajarildi."
-    )
     
  const clock=new THREE.Clock();
 
@@ -1433,4 +1027,601 @@ def render_powerpoint():
 
             slide = presentation.slides.add_slide(
                 presentation.slide_layouts[6]
-)
+    )
+            
+            title_box = slide.shapes.add_textbox(
+                Inches(0.7), Inches(0.5),
+                Inches(12), Inches(1.0)
+            )
+
+            tf = title_box.text_frame
+            tf.text = slide_title
+
+            for paragraph in tf.paragraphs:
+                paragraph.font.size = Pt(28)
+                paragraph.font.bold = True
+
+            body_box = slide.shapes.add_textbox(
+                Inches(0.8), Inches(1.8),
+                Inches(11.8), Inches(4.8)
+            )
+
+            body_box.text_frame.text = body[:3000]
+
+            for paragraph in body_box.text_frame.paragraphs:
+                paragraph.font.size = Pt(20)
+
+        output = BytesIO()
+        presentation.save(output)
+        output.seek(0)
+
+        st.download_button(
+            "📥 PowerPoint yuklab olish",
+            data=output,
+            file_name="JON_AI_Presentation.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            use_container_width=True
+        )
+
+
+# ============================================================
+# 11. TRANSLATOR
+# ============================================================
+
+def render_translator():
+    st.title("🌐 JON AI Translator")
+    st.caption("Zamonaviy va qadimgi tillar uchun aqlli tarjimon")
+
+    modern_languages = [
+        "O'zbek", "English", "Русский", "Turkish", "Arabic",
+        "German", "French", "Spanish", "Italian", "Chinese", "Japanese"
+    ]
+
+    ancient_languages = [
+        "Lotin tili (Classical Latin)",
+        "Qadimgi yunon tili (Ancient Greek)",
+        "Sanskrit",
+        "Qadimgi ibroniy tili (Biblical Hebrew)",
+        "Aramiy tili (Aramaic)",
+        "Qadimgi misr tili (Egyptian / hieroglyphs)",
+        "Akkad tili (Akkadian)",
+        "Shumer tili (Sumerian)",
+        "Qadimgi turkiy til (Old Turkic / runic)"
+    ]
+
+    language_group = st.radio(
+        "Tarjima yo'nalishi",
+        ["Zamonaviy tillar", "Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"],
+        horizontal=True,
+        key="translator_language_group"
+    )
+
+    if language_group == "Zamonaviy tillar":
+        source_options = ["Avtomatik aniqlash"] + modern_languages
+        target_options = modern_languages
+    elif language_group == "Qadimgi tillar":
+        source_options = ["Avtomatik aniqlash"] + ancient_languages
+        target_options = ancient_languages
+    else:
+        source_options = ["Avtomatik aniqlash"] + modern_languages + ancient_languages
+        target_options = modern_languages + ancient_languages
+
+    col1, col2 = st.columns(2)
+    with col1:
+        source = st.selectbox("Asl til", source_options, key="translator_source")
+    with col2:
+        target = st.selectbox("Tarjima tili", target_options, index=0, key="translator_target")
+
+    input_text = st.text_area(
+        "Tarjima qilinadigan matn",
+        height=180,
+        placeholder="Matn yoki qadimgi yozuvni shu yerga kiriting..."
+    )
+
+    include_notes = st.checkbox(
+        "So'zma-so'z tahlil, talaffuz va tarixiy izohni ham ko'rsatish",
+        value=True
+    )
+
+    if st.button("🌐 Tarjima qilish", use_container_width=True):
+        if not input_text.strip():
+            st.warning("Avval tarjima qilinadigan matnni kiriting.")
+            return
+
+        ancient_names = "; ".join(ancient_languages)
+        ancient_mode = (
+            language_group in ["Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"]
+            or source in ancient_languages
+            or target in ancient_languages
+        )
+
+        if ancient_mode:
+            prompt = f"""
+Siz JON AI tarkibidagi ehtiyotkor tarixiy-filologik tarjimon sifatida ishlaysiz.
+Manba tili: {source}.
+Maqsad tili: {target}.
+Qadimgi tillar yo'nalishlari: {ancient_names}.
+
+ASOSIY QOIDA:
+Lug'at yoki ma'lumot cheklangan bo'lsa, foydalanuvchini darhol xatolik bilan to'xtatmang.
+Mavjud bilim va matn kontekstiga tayangan holda imkon qadar tarjimani davom ettiring.
+Avval so'zma-so'z tarjima qiling, keyin kerak bo'lsa ravon mazmuniy tarjimani bering.
+Aniq ma'nosi topilmagan so'zni o'ylab topmang: asl shaklini saqlang va eng yaqin ehtimoliy ma'noni
+"taxminiy" deb belgilang. O'qilishi yoki yozuvi noaniq bo'lsa, buni qisqa izohlang.
+Qadimgi yozuvni zamonaviy imloga o'zboshimchalik bilan aylantirmang.
+Agar matnning bir qismi noma'lum bo'lsa, tushunarli qismlarini baribir tarjima qiling.
+
+JAVOB TUZILISHI:
+1. So'zma-so'z tarjima.
+2. Ravon tarjima yoki umumiy mazmun.
+3. Muhim so'zlar tahlili: asl so'z — ehtimoliy ma'no.
+4. Talaffuz/transliteratsiya (ishonchli bo'lsa; aks holda taxminiy deb belgilang).
+5. Noaniq yoki taxminiy joylar (faqat mavjud bo'lsa).
+6. Tarixiy/grammatik izoh (foydali bo'lsa).
+
+{('Tahlil va izohlarni ham kiriting.' if include_notes else 'Javobni ixcham bering, ammo noaniqlikni yashirmang.')}
+
+MATN:
+{input_text}
+"""
+        else:
+            prompt = f"""
+Quyidagi matnni {source} tilidan {target} tiliga tarjima qil.
+Ma'noni, uslubni va grammatikani saqla. Ismlar va maxsus atamalarni ehtiyotkorlik bilan tarjima qil.
+{('Zarur bo‘lsa, muhim iboralar haqida qisqa izoh ber.' if include_notes else 'Faqat tarjimani ber.')}
+
+MATN:
+{input_text}
+"""
+
+        with st.spinner("Matn tahlil qilinib, tarjima qilinmoqda..."):
+            result = ask_ai(prompt)
+
+        st.markdown("### Tarjima natijasi")
+        st.text_area("JON AI tarjimasi", result, height=280)
+        st.caption("Qadimgi tillar bo'yicha ayrim shakl va ma'nolar ilmiy jihatdan bahsli bo'lishi mumkin. Taxminlar alohida ko'rsatiladi.")
+
+
+# ============================================================
+# 12. IMAGE PROMPT STUDIO
+# ============================================================
+
+def render_image_prompt():
+    st.title("🎨 AI Image Prompt Studio")
+
+    subject = st.text_input("Rasm mavzusi")
+
+    style = st.selectbox(
+        "Tasvir uslubi",
+        [
+            "Photorealistic",
+            "3D cinematic",
+            "Anime",
+            "Cyberpunk",
+            "Fantasy",
+            "Minimalist",
+            "Luxury advertising"
+        ]
+    )
+
+    lighting = st.selectbox(
+        "Yoritish",
+        [
+            "Cinematic lighting",
+            "Neon lighting",
+            "Natural light",
+            "Studio lighting"
+        ]
+    )
+
+    ratio = st.selectbox(
+        "Format",
+        ["16:9", "1:1", "9:16", "4:5"]
+    )
+
+    details = st.text_area("Qo'shimcha detallar")
+
+    if st.button("✨ Prompt yaratish", use_container_width=True):
+        prompt = f"""
+        Create a professional image generation prompt.
+        Subject: {subject}
+        Style: {style}
+        Lighting: {lighting}
+        Aspect ratio: {ratio}
+        Details: {details}
+
+        Write a detailed English prompt and a negative prompt.
+        """
+
+        with st.spinner("Prompt yaratilmoqda..."):
+            result = ask_ai(prompt)
+
+        st.markdown(result)
+        st.session_state.copied_prompt = result
+        st.code(result, language="text")
+
+
+# ============================================================
+# 13. EXCEL ANALYSIS
+# ============================================================
+
+def render_excel():
+    st.title("📈 JON AI — Excel Analysis")
+
+    uploaded = st.file_uploader(
+        "Excel yoki CSV fayl yuklang",
+        type=["xlsx", "xls", "csv"]
+    )
+
+    if uploaded:
+        try:
+            if uploaded.name.lower().endswith(".csv"):
+                df = pd.read_csv(uploaded)
+            else:
+                df = pd.read_excel(uploaded)
+
+            st.success("Fayl muvaffaqiyatli yuklandi.")
+
+            st.markdown("### Ma'lumotlar")
+            st.dataframe(df, use_container_width=True)
+
+            c1, c2, c3 = st.columns(3)
+
+            c1.metric("Qatorlar", len(df))
+            c2.metric("Ustunlar", len(df.columns))
+            c3.metric(
+                "Bo'sh qiymatlar",
+                int(df.isna().sum().sum())
+            )
+
+            st.markdown("### Statistik ma'lumotlar")
+
+            st.dataframe(
+                df.describe(include="all").transpose(),
+                use_container_width=True
+            )
+
+            question = st.text_area(
+                "JON AI dan qanday tahlil kerak?"
+            )
+
+            if st.button("📊 AI tahlil"):
+                context = df.head(30).to_string()
+                context += "\n\nStatistika:\n"
+                context += df.describe(include="all").to_string()
+
+                prompt = question or (
+                    "Ushbu jadvalni professional tahlil qil. "
+                    "Muhim xulosalar va tavsiyalar ber."
+                )
+
+                with st.spinner("Tahlil qilinmoqda..."):
+                    result = ask_ai(
+                        prompt,
+                        extra_context=context
+                    )
+
+                st.markdown(result)
+
+        except Exception as error:
+            st.error(f"Faylni o'qishda xato: {error}")
+            
+# ============================================================
+# 14. TASK MANAGER
+# ============================================================
+
+def render_tasks():
+    st.title("📝 JON AI — Vazifalar")
+
+    task = st.text_input("Yangi vazifa")
+
+    if st.button("➕ Vazifa qo'shish"):
+        if task.strip():
+            st.session_state.tasks.append({
+                "task": task.strip(),
+                "done": False
+            })
+            st.rerun()
+
+    if not st.session_state.tasks:
+        st.info("Hozircha vazifalar yo'q.")
+        return
+
+    for index, item in enumerate(st.session_state.tasks):
+        col1, col2 = st.columns([5, 1])
+
+        with col1:
+            checked = st.checkbox(
+                item["task"],
+                value=item["done"],
+                key=f"task_{index}"
+            )
+            st.session_state.tasks[index]["done"] = checked
+
+        with col2:
+            if st.button("🗑️", key=f"delete_task_{index}"):
+                st.session_state.tasks.pop(index)
+                st.rerun()
+
+
+# ============================================================
+# 15. CAMERA
+# ============================================================
+
+def render_camera():
+    st.title("📷 JON AI — Camera Studio")
+
+    st.info(
+        "Kamera ishlashi uchun brauzer yoki ilovada "
+        "kamera ruxsatini bering."
+    )
+
+    photo = st.camera_input("Suratga olish")
+
+    if photo:
+        st.image(
+            photo,
+            caption="Sizning suratingiz",
+            use_container_width=True
+        )
+
+        st.success("Surat olindi.")
+
+        if st.button("🤖 Rasmni AI bilan tahlil qilish"):
+            st.info(
+                "Kamera orqali surat olish mavjud. "
+                "AI rasm tahlili uchun Gemini Vision "
+                "integratsiyasi keyingi bosqichda qo'shiladi."
+            )
+
+
+# ============================================================
+# 16. CHARACTER STUDIO
+# ============================================================
+
+def render_character():
+    st.title("👤 JON AI — Character Studio")
+
+    show_character(520, cinematic=False)
+
+    st.markdown("### Personaj sozlamalari")
+
+    name = st.text_input(
+        "Personaj nomi",
+        value=st.session_state.character_name
+    )
+
+    styles = [
+        "Hologramma",
+        "Realistik robot",
+        "Multfilm uslubi",
+        "Fantastik"
+    ]
+
+    style = st.selectbox(
+        "Personaj uslubi",
+        styles,
+        index=styles.index(st.session_state.character_style)
+        if st.session_state.character_style in styles else 0
+    )
+
+    animation = st.selectbox(
+        "Animatsiya rejimi",
+        ["Raqs", "Tabiiy harakat", "Sokin", "Energetik"]
+    )
+
+    intro = st.checkbox(
+        "Kirish effektini yoqish",
+        value=st.session_state.intro_enabled
+    )
+
+    if st.button("💾 Saqlash"):
+        st.session_state.character_name = name
+        st.session_state.character_style = style
+        st.session_state.character_animation = animation
+        st.session_state.intro_enabled = intro
+
+        st.success("Personaj sozlamalari saqlandi.")
+        st.rerun()
+
+    st.caption(
+        "Haqiqiy yuz ifodalari, ovoz bilan lab sinxronlash "
+        "va kamera orqali kuzatish alohida integratsiyani talab qiladi."
+    )
+
+
+# ============================================================
+# 17. SETTINGS
+# ============================================================
+
+def render_settings():
+    st.title("⚙️ JON AI — System Settings")
+
+    st.markdown("### Gemini API")
+
+    key = st.text_input(
+        "Gemini API Key",
+        type="password",
+        value=st.session_state.api_key
+    )
+
+    models = [
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite"
+    ]
+
+    current_model = st.session_state.model
+
+    model = st.selectbox(
+        "Gemini modeli",
+        models,
+        index=models.index(current_model)
+        if current_model in models else 0
+    )
+
+    if st.button("💾 API sozlamalarini saqlash"):
+        st.session_state.api_key = key.strip()
+        st.session_state.model = model
+        st.success("Sozlamalar saqlandi.")
+
+    st.markdown("---")
+    st.markdown("### Ulanishni tekshirish")
+
+    if st.button("🔍 Gemini API ni tekshirish"):
+        if not get_api_key():
+            st.error("Avval API kalitini kiriting.")
+        else:
+            with st.spinner("Ulanish tekshirilmoqda..."):
+                if check_model():
+                    st.success("Gemini API muvaffaqiyatli ishlayapti.")
+
+    st.markdown("---")
+
+    st.markdown("### System information")
+    st.write("JON AI Version:", APP_VERSION)
+    st.write("Selected model:", st.session_state.model)
+
+    st.warning(
+        "API kalitni ommaviy GitHub kodiga yozmang. "
+        "Streamlit Secrets orqali saqlash xavfsizroq."
+    )
+
+
+# ============================================================
+# 18. PREMIUM CREATIVE STUDIO
+# ============================================================
+
+def render_premium():
+    st.title("💎 JON AI — Premium Creative Studio")
+
+    st.markdown("""
+    <div class="panel">
+    <h2>🚀 NEXT GENERATION CREATIVE LAB</h2>
+    Professional ijodiy loyihalar uchun yagona markaz.
+    </div>
+    """, unsafe_allow_html=True)
+
+    features = [
+        ("🎬 AI Video Studio", "Video ssenariy va sahnalar"),
+        ("🎵 AI Music Studio", "Original musiqa g'oyalari"),
+        ("🏢 Logo Studio", "Kompaniya logotipi konsepsiyasi"),
+        ("🎭 Character Animation", "Personaj animatsiyasi"),
+        ("📸 Photo to Movie", "Suratdan video ssenariysi"),
+        ("🎨 Photo to Cartoon", "Multfilm uslubidagi promptlar"),
+        ("🎞️ Movie Maker", "Film ssenariysi va storyboard"),
+        ("✨ Visual Effects", "Maxsus effektlar g'oyalari")
+    ]
+
+    cols = st.columns(2)
+
+    for i, (title, description) in enumerate(features):
+        with cols[i % 2]:
+            st.markdown(
+                f"""
+                <div class="feature-card">
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    st.markdown("---")
+    st.markdown("### Creative AI Assistant")
+
+    project = st.selectbox(
+        "Loyiha turi",
+        [
+            "Kompaniya logotipi",
+            "Reklama videosi",
+            "Kino ssenariysi",
+            "Musiqa konsepsiyasi",
+            "3D personaj",
+            "Animatsion video",
+            "Professional prezentatsiya"
+        ]
+    )
+
+    idea = st.text_area("Loyiha g'oyasi")
+
+    if st.button("✨ Creative loyiha yaratish"):
+        if not idea.strip():
+            st.warning("Loyiha g'oyasini kiriting.")
+            return
+
+        prompt = f"""
+        Professional creative director sifatida ishlang.
+
+        Loyiha turi: {project}
+        G'oya: {idea}
+
+        Professional konsepsiya, vizual yo'nalish,
+        ranglar, sahnalar va amalga oshirish rejasini yozing.
+        """
+
+        with st.spinner("Creative loyiha yaratilmoqda..."):
+            result = ask_ai(prompt)
+
+        st.markdown(result)
+
+
+# ============================================================
+# 19. MAIN ROUTER
+# ============================================================
+
+page = st.session_state.page
+
+if page == "🏠 Bosh sahifa":
+    render_home()
+
+elif page == "🤖 AI Chat":
+    render_chat()
+
+elif page == "🎓 Ta'lim markazi":
+    render_education()
+
+elif page == "📊 PowerPoint":
+    render_powerpoint()
+
+elif page == "🌐 Tarjimon":
+    render_translator()
+
+elif page == "🎨 Rasm prompti":
+    render_image_prompt()
+
+elif page == "📈 Excel tahlil":
+    render_excel()
+
+elif page == "📝 Vazifalar":
+    render_tasks()
+
+elif page == "📷 Kamera":
+    render_camera()
+
+elif page == "👤 Personaj":
+    render_character()
+
+elif page == "⚙️ Sozlamalar":
+    render_settings()
+
+elif page == "💎 Premium":
+    render_premium()
+
+
+# ============================================================
+# 20. FOOTER
+# ============================================================
+
+st.markdown("---")
+
+st.markdown(
+    """
+    <div style="text-align:center;color:#7895bd;padding:12px">
+        💎 JON AI LIVE 9.3<br>
+        NEXT GENERATION VIRTUAL INTELLIGENCE<br>
+        <small>Designed for the future.</small>
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+                
