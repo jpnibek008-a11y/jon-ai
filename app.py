@@ -371,32 +371,6 @@ def check_model():
     except Exception as error:
         st.error(explain_api_error(error))
         return False
-
-            return "AI javob qaytarmadi. Qayta urinib ko'ring."
-
-        return answer.strip()
-
-    except Exception as error:
-        return explain_api_error(error)
-
-
-def check_model():
-    try:
-        client = get_client()
-        model = st.session_state.get("model", DEFAULT_MODEL)
-
-        response = client.models.generate_content(
-            model=model,
-            contents="Salom. Faqat OK deb javob ber."
-        )
-
-        return bool(getattr(response, "text", None))
-
-    except Exception as error:
-        st.error(explain_api_error(error))
-        return False
-
-
 # ============================================================
 # 5. THREE.JS — HUMAN + ANDROID
 # ============================================================
