@@ -1,11 +1,12 @@
 # ============================================================
-# JON AI LIVE 9.1 — RESPONSIVE DUAL CHARACTER EXPERIENCE
+# JON AI LIVE 9.2 — NEXT GENERATION VIRTUAL INTELLIGENCE
 # Streamlit + Gemini AI + Three.js Dual 3D Characters
 # ============================================================
 
 import json
 import re
 import time
+import random
 from io import BytesIO
 
 import pandas as pd
@@ -21,11 +22,11 @@ from pptx.util import Inches, Pt
 # 1. CONFIGURATION
 # ============================================================
 
-APP_VERSION = "9.1"
+APP_VERSION = "9.2"
 DEFAULT_MODEL = "gemini-3.8-flash"
 
 st.set_page_config(
-    page_title="JON AI LIVE 9.1",
+    page_title="JON AI LIVE 9.2",
     page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -71,12 +72,31 @@ DEFAULTS = {
     "intro_enabled": True,
     "character_animation": "Raqs",
     "copied_prompt": "",
-    "last_answer": ""
+    "last_answer": "",
+    "motivation_quote": ""
 }
 
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = value
+
+MOTIVATIONAL_QUOTES = [
+    ("TO‘XTAMA. SEN HALI ORZU QILGAN MANZILINGGA YETMAGANSAN!",
+     "Charchashing mumkin. Dam olishing mumkin. Ammo taslim bo‘lma."),
+    ("BUGUNGI HARAKATING — ERTANGI G‘ALABANG.",
+     "Kichik qadamlar ham seni katta maqsadga yaqinlashtiradi."),
+    ("QO‘RQMA. BOSHLAGAN ISHINGNI OXIRIGA YETKAZ!",
+     "Mukammal bo‘lish shart emas. Muhimi — davom etish."),
+    ("SEN O‘YLAGANINGDAN HAM KUCHLISAN!",
+     "Qiyinchiliklar seni to‘xtatish uchun emas, chiniqtirish uchun."),
+    ("BUGUN TASLIM BO‘LMA — ERTANGI O‘ZING SENGA RAHMAT AYTADI.",
+     "Maqsadingni esla va yana bir qadam tashla."),
+    ("ORZULAR KUTMAYDI. HARAKATNI BUGUN BOSHLА!",
+     "Vaqtingni qadrlagin. O‘z tarixingni o‘zing yarat.")
+]
+
+if not st.session_state.get("motivation_quote"):
+    st.session_state.motivation_quote = random.choice(MOTIVATIONAL_QUOTES)
 
 
 # ============================================================
@@ -129,6 +149,67 @@ h1,h2,h3 {color:#edf4ff !important;}
     padding:20px;
     margin-bottom:15px;
     box-shadow:0 0 25px #176dff12;
+}
+
+.motivation-frame {
+    position:relative;
+    overflow:hidden;
+    margin:22px auto 24px;
+    padding:20px 24px;
+    max-width:980px;
+    text-align:center;
+    border:1px solid rgba(72,205,255,.72);
+    border-radius:20px;
+    background:linear-gradient(125deg,rgba(9,28,58,.94),rgba(32,17,65,.92));
+    box-shadow:0 0 14px rgba(38,186,255,.22),inset 0 0 24px rgba(80,155,255,.10);
+    animation:motivationGlow 4s ease-in-out infinite;
+}
+.motivation-frame:before {
+    content:"";
+    position:absolute;
+    inset:5px;
+    border:1px solid rgba(157,111,255,.34);
+    border-radius:15px;
+    pointer-events:none;
+}
+.motivation-label {
+    color:#65dcff;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:3px;
+    margin-bottom:10px;
+}
+.motivation-quote {
+    position:relative;
+    color:#fff;
+    font-family:Orbitron,Inter,sans-serif;
+    font-size:clamp(15px,2.2vw,23px);
+    line-height:1.55;
+    font-weight:800;
+    text-shadow:0 0 14px rgba(65,194,255,.34);
+}
+.motivation-subtext {
+    position:relative;
+    color:#b9cce8;
+    font-size:13px;
+    margin-top:9px;
+}
+.motivation-signature {
+    position:relative;
+    color:#72dfff;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+    margin-top:13px;
+}
+@keyframes motivationGlow {
+    0%,100% {box-shadow:0 0 12px rgba(38,186,255,.18),inset 0 0 20px rgba(80,155,255,.08)}
+    50% {box-shadow:0 0 25px rgba(38,186,255,.34),inset 0 0 28px rgba(130,90,255,.13)}
+}
+@media(max-width:600px) {
+    .motivation-frame {padding:17px 14px;margin:16px auto 19px;border-radius:16px}
+    .motivation-label {font-size:10px;letter-spacing:2px}
+    .motivation-subtext {font-size:12px}
 }
 
 .feature-card {
@@ -289,9 +370,7 @@ def check_model():
     except Exception as error:
         st.error(explain_api_error(error))
         return False
-
-
-# ============================================================
+        # ============================================================
 # 5. THREE.JS — HUMAN + ANDROID
 # ============================================================
 
@@ -355,17 +434,7 @@ canvas{display:block;width:100%;height:100%}
 }
 .label{
  text-align:center;color:#c5e8ff;
- font-size:11px;letter-spacing:3px;
- min-width:0;flex:1
-}
-@media(max-width:600px){
- .brand{top:13px}
- .brand h1{font-size:27px;letter-spacing:5px}
- .brand span{font-size:7px;letter-spacing:2px}
- .status{top:69px;font-size:9px;letter-spacing:2px}
- .labels{bottom:13px;padding:0 8px;gap:4px}
- .label{font-size:10px;letter-spacing:2px}
- .label small{font-size:7px;letter-spacing:1px}
+ font-size:11px;letter-spacing:3px
 }
 .label small{
  display:block;margin-top:5px;color:#7b9dc9;
@@ -418,8 +487,7 @@ canvas{display:block;width:100%;height:100%}
  const camera=new THREE.PerspectiveCamera(
   42,box.clientWidth/box.clientHeight,0.1,100
  );
- camera.position.set(0,0.65,10.8);
- camera.lookAt(0,0,0);
+ camera.position.set(0,1.0,10.8);
 
  const renderer=new THREE.WebGLRenderer({
   antialias:true,alpha:true
@@ -506,7 +574,7 @@ canvas{display:block;width:100%;height:100%}
 
  function createPerson(isAndroid){
   const root=new THREE.Group();
-  root.position.x=isAndroid?1.85:-1.85;
+  root.position.x=isAndroid?2.0:-2.0;
   scene.add(root);
 
   const body=new THREE.Group();
@@ -517,7 +585,8 @@ canvas{display:block;width:100%;height:100%}
 
   cylinder(body,-0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
   cylinder(body,0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
-      sphere(body,-0.22,-1.48,0.1,0.2,0.12,0.3,blue);
+
+  sphere(body,-0.22,-1.48,0.1,0.2,0.12,0.3,blue);
   sphere(body,0.22,-1.48,0.1,0.2,0.12,0.3,blue);
 
   sphere(body,0,-0.05,0,0.57,0.78,0.32,bodyMat);
@@ -576,51 +645,18 @@ canvas{display:block;width:100%;height:100%}
  const human=createPerson(false);
  const android=createPerson(true);
 
- // Portrait screens need a narrower character spread and a more distant camera.
- function fitScene(){
-  const w=Math.max(box.clientWidth,1);
-  const h=Math.max(box.clientHeight,1);
-  const aspect=w/h;
-  camera.aspect=aspect;
-
-  if(aspect<0.62){
-   camera.position.set(0,0.55,14.4);
-   human.root.position.x=-1.22;
-   android.root.position.x=1.22;
-   human.root.scale.setScalar(0.91);
-   android.root.scale.setScalar(0.91);
-  }else if(aspect<0.9){
-   camera.position.set(0,0.55,12.5);
-   human.root.position.x=-1.48;
-   android.root.position.x=1.48;
-   human.root.scale.setScalar(0.96);
-   android.root.scale.setScalar(0.96);
-  }else{
-   camera.position.set(0,0.65,10.8);
-   human.root.position.x=-1.85;
-   android.root.position.x=1.85;
-   human.root.scale.setScalar(1);
-   android.root.scale.setScalar(1);
-  }
-
-  camera.lookAt(0,0,0);
-  camera.updateProjectionMatrix();
-  renderer.setSize(w,h);
- }
- fitScene();
-
  const energyRings=[];
 
  for(let i=0;i<5;i++){
   energyRings.push(
    ring(scene,2.3+i*0.24,0.008,
     i%2?0x9655ff:0x36cfff,
-    0,-1.15,-1.2,Math.PI/2)
+    0,-0.1,-1.2,Math.PI/2)
   );
  }
 
  const portal=new THREE.Group();
- portal.position.set(0,-1.35,-1.5);
+ portal.position.set(0,0.1,-1.5);
  scene.add(portal);
 
  ring(portal,3.15,0.035,0x4d9fff,0,0,0,Math.PI/2);
@@ -659,7 +695,7 @@ canvas{display:block;width:100%;height:100%}
 
    p.root.position.y=Math.sin(t*1.4+phase)*0.12;
    p.body.rotation.z=Math.sin(t*1.1+phase)*0.035;
-   p.head.rotation.y=Math.sin(t*0.8+phase)*0.12;
+       p.head.rotation.y=Math.sin(t*0.8+phase)*0.12;
    p.head.rotation.x=Math.sin(t*1.5+phase)*0.035;
 
    p.armL.rotation.z=
@@ -705,7 +741,13 @@ canvas{display:block;width:100%;height:100%}
   intro.remove();
  }
 
- window.addEventListener("resize",fitScene);
+ window.addEventListener("resize",()=>{
+  const w=box.clientWidth;
+  const h=box.clientHeight;
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+ });
 
 })();
 </script>
@@ -765,7 +807,20 @@ def render_home():
         unsafe_allow_html=True
     )
 
-    show_character(620)
+    quote, support = st.session_state.motivation_quote
+    st.markdown(
+        f"""
+        <div class="motivation-frame">
+            <div class="motivation-label">✦ BUGUNGI MOTIVATSIYA ✦</div>
+            <div class="motivation-quote">“{quote}”</div>
+            <div class="motivation-subtext">{support}</div>
+            <div class="motivation-signature">— JON AI</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    show_character(570)
 
     st.markdown("## ✨ JON AI imkoniyatlari")
 
@@ -790,8 +845,10 @@ def render_home():
                 </div>
                 """,
                 unsafe_allow_html=True
-    )
-            # ============================================================
+            )
+
+
+# ============================================================
 # 8. AI CHAT
 # ============================================================
 
@@ -980,12 +1037,14 @@ def render_powerpoint():
 
             body_box = slide.shapes.add_textbox(
                 Inches(0.8), Inches(1.8),
-                Inches(11.8), Inches(4.8)
+                Inches(11.8), Inches(5.0)
             )
 
-            body_box.text_frame.text = body[:3000]
+            body_frame = body_box.text_frame
+            body_frame.word_wrap = True
+            body_frame.text = body[:2500]
 
-            for paragraph in body_box.text_frame.paragraphs:
+            for paragraph in body_frame.paragraphs:
                 paragraph.font.size = Pt(20)
 
         output = BytesIO()
@@ -993,66 +1052,128 @@ def render_powerpoint():
         output.seek(0)
 
         st.download_button(
-            "📥 PowerPoint yuklab olish",
+            "⬇️ PowerPoint faylini yuklab olish",
             data=output,
             file_name="JON_AI_Presentation.pptx",
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            use_container_width=True
-        )
-
-
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+        
 # ============================================================
 # 11. TRANSLATOR
 # ============================================================
 
 def render_translator():
     st.title("🌐 JON AI Translator")
+    st.caption("Zamonaviy va qadimgi tillar uchun aqlli tarjimon")
 
-    source = st.selectbox(
-        "Asl til",
-        [
-            "Avtomatik",
-            "O'zbek",
-            "English",
-            "Русский",
-            "Turkish",
-            "Arabic"
-        ]
+    modern_languages = [
+        "O'zbek", "English", "Русский", "Turkish", "Arabic",
+        "German", "French", "Spanish", "Italian", "Chinese", "Japanese"
+    ]
+
+    ancient_languages = [
+        "Lotin tili (Classical Latin)",
+        "Qadimgi yunon tili (Ancient Greek)",
+        "Sanskrit",
+        "Qadimgi ibroniy tili (Biblical Hebrew)",
+        "Aramiy tili (Aramaic)",
+        "Qadimgi misr tili (Egyptian / hieroglyphs)",
+        "Akkad tili (Akkadian)",
+        "Shumer tili (Sumerian)",
+        "Qadimgi turkiy til (Old Turkic / runic)"
+    ]
+
+    language_group = st.radio(
+        "Tarjima yo'nalishi",
+        ["Zamonaviy tillar", "Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"],
+        horizontal=True,
+        key="translator_language_group"
     )
 
-    target = st.selectbox(
-        "Tarjima tili",
-        [
-            "O'zbek",
-            "English",
-            "Русский",
-            "Turkish",
-            "Arabic",
-            "German",
-            "French"
-        ]
+    if language_group == "Zamonaviy tillar":
+        source_options = ["Avtomatik aniqlash"] + modern_languages
+        target_options = modern_languages
+    elif language_group == "Qadimgi tillar":
+        source_options = ["Avtomatik aniqlash"] + ancient_languages
+        target_options = ancient_languages
+    else:
+        source_options = ["Avtomatik aniqlash"] + modern_languages + ancient_languages
+        target_options = modern_languages + ancient_languages
+
+    col1, col2 = st.columns(2)
+    with col1:
+        source = st.selectbox("Asl til", source_options, key="translator_source")
+    with col2:
+        target = st.selectbox("Tarjima tili", target_options, index=0, key="translator_target")
+
+    input_text = st.text_area(
+        "Tarjima qilinadigan matn",
+        height=180,
+        placeholder="Matn yoki qadimgi yozuvni shu yerga kiriting..."
     )
 
-    text = st.text_area("Tarjima qilinadigan matn", height=180)
+    include_notes = st.checkbox(
+        "So'zma-so'z tahlil, talaffuz va tarixiy izohni ham ko'rsatish",
+        value=True
+    )
 
     if st.button("🌐 Tarjima qilish", use_container_width=True):
-        if not text.strip():
-            st.warning("Matn kiriting.")
+        if not input_text.strip():
+            st.warning("Avval tarjima qilinadigan matnni kiriting.")
             return
 
-        prompt = f"""
-        Quyidagi matnni {source} tilidan {target} tiliga tarjima qil.
-        Ma'noni saqla, grammatik jihatdan to'g'ri tarjima qil.
+        ancient_names = "; ".join(ancient_languages)
+        ancient_mode = (
+            language_group in ["Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"]
+            or source in ancient_languages
+            or target in ancient_languages
+        )
 
-        MATN:
-        {text}
-        """
+        if ancient_mode:
+            prompt = f"""
+Siz JON AI tarkibidagi ehtiyotkor tarixiy-filologik tarjimon sifatida ishlaysiz.
+Manba tili: {source}.
+Maqsad tili: {target}.
+Qadimgi tillar yo'nalishlari: {ancient_names}.
 
-        with st.spinner("Tarjima qilinmoqda..."):
+ASOSIY QOIDA:
+Lug'at yoki ma'lumot cheklangan bo'lsa, foydalanuvchini darhol xatolik bilan to'xtatmang.
+Mavjud bilim va matn kontekstiga tayangan holda imkon qadar tarjimani davom ettiring.
+Avval so'zma-so'z tarjima qiling, keyin kerak bo'lsa ravon mazmuniy tarjimani bering.
+Aniq ma'nosi topilmagan so'zni o'ylab topmang: asl shaklini saqlang va eng yaqin ehtimoliy ma'noni
+"taxminiy" deb belgilang. O'qilishi yoki yozuvi noaniq bo'lsa, buni qisqa izohlang.
+Qadimgi yozuvni zamonaviy imloga o'zboshimchalik bilan aylantirmang.
+Agar matnning bir qismi noma'lum bo'lsa, tushunarli qismlarini baribir tarjima qiling.
+
+JAVOB TUZILISHI:
+1. So'zma-so'z tarjima.
+2. Ravon tarjima yoki umumiy mazmun.
+3. Muhim so'zlar tahlili: asl so'z — ehtimoliy ma'no.
+4. Talaffuz/transliteratsiya (ishonchli bo'lsa; aks holda taxminiy deb belgilang).
+5. Noaniq yoki taxminiy joylar (faqat mavjud bo'lsa).
+6. Tarixiy/grammatik izoh (foydali bo'lsa).
+
+{('Tahlil va izohlarni ham kiriting.' if include_notes else 'Javobni ixcham bering, ammo noaniqlikni yashirmang.')}
+
+MATN:
+{input_text}
+"""
+        else:
+            prompt = f"""
+Quyidagi matnni {source} tilidan {target} tiliga tarjima qil.
+Ma'noni, uslubni va grammatikani saqla. Ismlar va maxsus atamalarni ehtiyotkorlik bilan tarjima qil.
+{('Zarur bo‘lsa, muhim iboralar haqida qisqa izoh ber.' if include_notes else 'Faqat tarjimani ber.')}
+
+MATN:
+{input_text}
+"""
+
+        with st.spinner("Matn tahlil qilinib, tarjima qilinmoqda..."):
             result = ask_ai(prompt)
 
-        st.markdown("### Natija")
-        st.text_area("Tarjima", result, height=200)
+        st.markdown("### Tarjima natijasi")
+        st.text_area("JON AI tarjimasi", result, height=280)
+        st.caption("Qadimgi tillar bo'yicha ayrim shakl va ma'nolar ilmiy jihatdan bahsli bo'lishi mumkin. Taxminlar alohida ko'rsatiladi.")
 
 
 # ============================================================
@@ -1178,7 +1299,9 @@ def render_excel():
 
         except Exception as error:
             st.error(f"Faylni o'qishda xato: {error}")
-            # ============================================================
+
+
+# ============================================================
 # 14. TASK MANAGER
 # ============================================================
 
@@ -1262,9 +1385,8 @@ def render_camera():
                 "Kamera orqali surat olish mavjud. "
                 "AI rasm tahlili uchun Gemini Vision "
                 "integratsiyasi keyingi bosqichda qo'shiladi."
-            )
-
-
+    )
+    
 # ============================================================
 # 16. CHARACTER STUDIO
 # ============================================================
@@ -1513,4 +1635,4 @@ st.markdown(
     </div>
     """,
     unsafe_allow_html=True
-            )
+)
