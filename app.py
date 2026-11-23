@@ -1475,7 +1475,7 @@ def render_navigation():
 
     with st.sidebar:
         st.markdown(
-            """
+            f"""
             <div style="
                 text-align:center;
                 padding:15px 5px;
