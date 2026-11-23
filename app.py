@@ -150,9 +150,10 @@ Savol: {prompt}
         
 # ---------------------- 3D JON CHARACTER ----------------------
 
-def show_character(height=520):
+
+def show_character(height=560):
     config = {
-        "height": height,
+        "height": int(height),
         "name": st.session_state.get("character_name", "JON"),
         "style": st.session_state.get("character_style", "Hologramma"),
         "mode": st.session_state.get("character_animation", "Tabiiy harakat"),
@@ -160,410 +161,832 @@ def show_character(height=520):
         "action": st.session_state.get("jon_action", "speaking"),
     }
 
+    config_json = json.dumps(
+        config, ensure_ascii=False
+    ).replace("</", "<\\/")
+
     html_code = r"""
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-* {margin:0;padding:0;box-sizing:border-box}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    overflow:hidden;
-    background:transparent;
-    font-family:Arial,sans-serif;
+    overflow: hidden;
+    background: transparent;
+    font-family: Arial, sans-serif;
 }
+
 #scene {
-    width:100%;
-    height:CONFIG_HEIGHTpx;
-    position:relative;
-    overflow:hidden;
-    border-radius:22px;
+    width: 100%;
+    height: CONFIG_HEIGHTpx;
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
     background:
-      radial-gradient(ellipse at 50% 55%,#112d59 0%,#09152d 42%,#050817 100%);
+      radial-gradient(ellipse at 50% 42%,
+      #173c70 0%, #0a1936 48%, #030714 100%);
+    border: 1px solid rgba(83,210,255,.25);
 }
-canvas {display:block}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 #hud {
-    position:absolute;
-    top:16px;
-    left:0;
-    width:100%;
-    text-align:center;
-    pointer-events:none;
-    z-index:3;
+    position: absolute;
+    top: 16px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 5;
+    pointer-events: none;
 }
+
 #name {
-    color:#83eaff;
-    font-size:24px;
-    font-weight:800;
-    letter-spacing:7px;
-    text-shadow:0 0 15px #27caff;
+    color: #8ceeff;
+    font-size: 25px;
+    font-weight: 900;
+    letter-spacing: 7px;
+    text-shadow:
+      0 0 8px #00cfff,
+      0 0 25px #008cff;
 }
+
 #status {
-    color:#7fffd4;
-    font-size:10px;
-    letter-spacing:3px;
-    margin-top:7px;
+    color: #75ffd6;
+    font-size: 10px;
+    letter-spacing: 3px;
+    margin-top: 7px;
 }
+
 #bottom {
-    position:absolute;
-    bottom:17px;
-    left:0;
-    width:100%;
-    text-align:center;
-    color:#8fc8ed;
-    font-size:10px;
-    letter-spacing:2px;
-    pointer-events:none;
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: #9edaff;
+    font-size: 10px;
+    letter-spacing: 2px;
+    z-index: 5;
+    pointer-events: none;
 }
+
 #glow {
-    position:absolute;
-    width:180px;
-    height:180px;
-    border-radius:50%;
-    background:#00bfff;
-    filter:blur(100px);
-    opacity:.15;
-    left:calc(50% - 90px);
-    top:45%;
-    pointer-events:none;
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    left: calc(50% - 120px);
+    top: 35%;
+    border-radius: 50%;
+    background: #00aaff;
+    filter: blur(95px);
+    opacity: .18;
+    pointer-events: none;
+}
+
+#scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: .12;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(95,220,255,.2) 4px
+    );
+}
+
+#corner {
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(75,210,255,.12);
+    border-radius: 17px;
+    pointer-events: none;
+    z-index: 4;
+}
+
+#fallback {
+    display: none;
+    position: absolute;
+    inset: 0;
+    color: #8ceeff;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 14px;
+    z-index: 10;
 }
 </style>
 </head>
+
 <body>
+
 <div id="scene">
     <div id="glow"></div>
+    <div id="scanlines"></div>
+    <div id="corner"></div>
+
     <div id="hud">
-        <div id="name">CONFIG_NAME</div>
+        <div id="name"></div>
         <div id="status">● JON AI — ONLINE</div>
     </div>
-    <div id="bottom">CONFIG_STYLE · CONFIG_MODE</div>
+
+    <div id="bottom"></div>
+    <div id="fallback">3D modul yuklanmoqda...</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
 (function(){
+
+    const CFG = CONFIG_JSON;
+
     const root = document.getElementById("scene");
     const status = document.getElementById("status");
+    const fallback = document.getElementById("fallback");
+
+    document.getElementById("name").textContent = CFG.name;
+    document.getElementById("bottom").textContent =
+        CFG.style + " · " + CFG.mode;
 
     if (!window.THREE) {
-        status.textContent = "3D MODUL YUKLANMADI";
+        fallback.style.display = "flex";
+        fallback.textContent = "3D modul yuklanmadi. Internet aloqasini tekshiring.";
+        status.textContent = "3D OFFLINE";
         return;
     }
+
+    const THREE = window.THREE;
 
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(
-        42,
+        38,
         root.clientWidth / root.clientHeight,
         0.1,
         100
     );
-    camera.position.set(0,1.4,7);
+
+    camera.position.set(0, 0.3, 8.5);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
-        antialias:true,
-        alpha:true
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.setSize(root.clientWidth,root.clientHeight);
-    renderer.setClearColor(0x000000,0);
-    root.appendChild(renderer.domElement);
 
-    const group = new THREE.Group();
-    scene.add(group);
+    renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio || 1, 1.6)
+    );
 
-    const ambient = new THREE.AmbientLight(0x8acfff,1.3);
-    scene.add(ambient);
+    renderer.setSize(root.clientWidth, root.clientHeight);
+    renderer.setClearColor(0x000000, 0);
 
-    const blueLight = new THREE.PointLight(0x00bfff,3,15);
-    blueLight.position.set(-3,3,4);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    root.insertBefore(renderer.domElement, root.firstChild);
+
+    const character = new THREE.Group();
+    scene.add(character);
+
+    // ======================================
+    // STYLE SYSTEM
+    // ======================================
+
+    const style = CFG.style;
+
+    const hologram = style === "Hologramma";
+    const human = style === "Human" ||
+                  style === "Realistik inson";
+    const android = style === "Android" ||
+                    style === "Realistik robot";
+
+    const cartoon = style === "Multfilm uslubi";
+    const fantasy = style === "Fantastik";
+
+    const primaryColor = fantasy ? 0xb15cff :
+                         hologram ? 0x25dfff :
+                         cartoon ? 0x36dfff :
+                         0x319cff;
+
+    const skinColor = human ? 0xdcae91 : 0xb8d4e8;
+
+    const bodyColor = human ? 0x172b48 :
+                      hologram ? 0x26cfff :
+                      fantasy ? 0x6939a8 :
+                      0x52718f;
+
+    function makeMaterial(color, metalness, roughness, emissive) {
+        return new THREE.MeshStandardMaterial({
+            color: color,
+            metalness: metalness,
+            roughness: roughness,
+            emissive: emissive || 0x000000,
+            emissiveIntensity: hologram ? 0.75 : 0.25,
+            transparent: hologram,
+            opacity: hologram ? 0.76 : 1
+        });
+    }
+
+    const bodyMat = makeMaterial(
+        bodyColor, human ? 0.15 : 0.8, 0.3, primaryColor
+    );
+
+    const darkMat = makeMaterial(0x101a30, 0.7, 0.3);
+    const skinMat = makeMaterial(skinColor, 0.05, 0.75);
+    const metalMat = makeMaterial(0x91b9d5, 0.85, 0.22);
+
+    const lightMat = new THREE.MeshBasicMaterial({
+        color: primaryColor
+    });
+
+    const eyeMat = new THREE.MeshBasicMaterial({
+        color: 0x8ef7ff
+    });
+
+    const whiteEyeMat = new THREE.MeshStandardMaterial({
+        color: 0xf2f7ff,
+        roughness: 0.3
+    });
+
+    // ======================================
+    // LIGHTING
+    // ======================================
+
+    scene.add(new THREE.AmbientLight(0x9bcaff, 1.5));
+
+    const blueLight = new THREE.PointLight(
+        0x00bfff, 3.5, 18
+    );
+    blueLight.position.set(-3, 3, 4);
     scene.add(blueLight);
 
-    const purpleLight = new THREE.PointLight(0x8b42ff,2,15);
-    purpleLight.position.set(3,1,2);
+    const purpleLight = new THREE.PointLight(
+        0x9b48ff, 2.5, 18
+    );
+    purpleLight.position.set(3, 1, 3);
     scene.add(purpleLight);
 
-    const whiteLight = new THREE.PointLight(0xffffff,1.5,10);
-    whiteLight.position.set(0,4,-2);
-    scene.add(whiteLight);
+    const frontLight = new THREE.PointLight(
+        0xffffff, 1.5, 12
+    );
+    frontLight.position.set(0, 3, 5);
+    scene.add(frontLight);
 
-    const hologram = CONFIG_STYLE === "Hologramma";
-    const cartoon = CONFIG_STYLE === "Multfilm uslubi";
-    const fantasy = CONFIG_STYLE === "Fantastik";
+    // ======================================
+    // GEOMETRY HELPERS
+    // ======================================
 
-    const mainColor = fantasy ? 0xb34dff :
-                      cartoon ? 0x42dfff :
-                      0x39c9ff;
-
-    const metalColor = hologram ? 0x36dfff :
-                       fantasy ? 0x9b55ff :
-                       0x8aaacb;
-
-    const material = new THREE.MeshStandardMaterial({
-        color:metalColor,
-        metalness:0.72,
-        roughness:0.28,
-        emissive:mainColor,
-        emissiveIntensity:0.35,
-        transparent:hologram,
-        opacity:hologram ? 0.82 : 1
-    });
-
-    const darkMaterial = new THREE.MeshStandardMaterial({
-        color:0x101a35,
-        metalness:0.65,
-        roughness:0.3
-    });
-
-    const glowMaterial = new THREE.MeshBasicMaterial({
-        color:mainColor,
-        transparent:true,
-        opacity:0.85
-    });
-
-    function sphere(x,y,z,sx,sy,sz,mat) {
+    function sphere(parent, x, y, z, sx, sy, sz, mat) {
         const mesh = new THREE.Mesh(
-            new THREE.SphereGeometry(1,32,24),
+            new THREE.SphereGeometry(1, 32, 24),
             mat
         );
-        mesh.position.set(x,y,z);
-        mesh.scale.set(sx,sy,sz);
-        group.add(mesh);
+
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        parent.add(mesh);
         return mesh;
     }
 
-    function cylinder(x,y,z,rt,rb,h,mat) {
+    function cylinderBetween(parent, start, end, radius, mat) {
+        const direction = new THREE.Vector3().subVectors(end, start);
+        const length = direction.length();
+
         const mesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(rt,rb,h,32),
+            new THREE.CylinderGeometry(
+                radius * 0.85,
+                radius,
+                length,
+                20
+            ),
             mat
         );
-        mesh.position.set(x,y,z);
-        group.add(mesh);
+
+        mesh.position.copy(start).add(end).multiplyScalar(0.5);
+        mesh.quaternion.setFromUnitVectors(
+            new THREE.Vector3(0, 1, 0),
+            direction.normalize()
+        );
+
+        parent.add(mesh);
         return mesh;
     }
 
-    // BODY
-    const body = sphere(0,-0.65,0,0.72,0.95,0.42,material);
-    const chest = sphere(0,-0.35,0.36,0.43,0.43,0.13,glowMaterial);
+    // ======================================
+    // TORSO
+    // ======================================
+
+    const torso = sphere(
+        character, 0, -0.35, 0,
+        0.67, 0.88, 0.37, bodyMat
+    );
+
+    const chest = sphere(
+        character, 0, -0.20, 0.345,
+        0.35, 0.31, 0.055, lightMat
+    );
+
+    sphere(
+        character, -0.69, 0.16, 0,
+        0.28, 0.26, 0.28, darkMat
+    );
+
+    sphere(
+        character, 0.69, 0.16, 0,
+        0.28, 0.26, 0.28, darkMat
+    );
+
+    // CHEST CORE
+    const core = sphere(
+        character, 0, -0.35, 0.42,
+        0.12, 0.12, 0.045, eyeMat
+    );
 
     // NECK
-    cylinder(0,0.42,0,0.19,0.22,0.36,darkMaterial);
+    cylinderBetween(
+        character,
+        new THREE.Vector3(0, 0.38, 0),
+        new THREE.Vector3(0, 0.83, 0),
+        0.17,
+        darkMat
+    );
 
-    // HEAD
+    // ======================================
+    // HEAD AND FACE
+    // ======================================
+
     const headGroup = new THREE.Group();
-    headGroup.position.set(0,1.05,0);
-    group.add(headGroup);
+    headGroup.position.set(0, 1.25, 0);
+    character.add(headGroup);
 
-    const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.65,40,32),
-        material
+    const headMat = human ? skinMat : bodyMat;
+
+    const head = sphere(
+        headGroup, 0, 0, 0,
+        human ? 0.48 : 0.53,
+        0.64,
+        0.43,
+        headMat
     );
-    head.scale.set(0.82,1,0.78);
-    headGroup.add(head);
 
-    // FACE PANEL
-    const face = new THREE.Mesh(
-        new THREE.SphereGeometry(0.49,32,24),
-        new THREE.MeshBasicMaterial({
-            color:0x06172c,
-            transparent:true,
-            opacity:0.85
-        })
-    );
-    face.scale.set(0.95,0.7,0.22);
-    face.position.set(0,-0.04,0.43);
-    headGroup.add(face);
+    // Hair for human character
+    if (human) {
+        const hairMat = makeMaterial(0x25202a, 0.05, 0.85);
 
-    // EYES
-    const eyeMat = new THREE.MeshBasicMaterial({color:0x65edff});
-    const eyeLeft = sphere(-0.22,1.08,0.46,0.105,0.045,0.035,eyeMat);
-    const eyeRight = sphere(0.22,1.08,0.46,0.105,0.045,0.035,eyeMat);
+        sphere(
+            headGroup, 0, 0.38, -0.035,
+            0.49, 0.30, 0.44, hairMat
+        );
 
-    group.remove(eyeLeft);
-    group.remove(eyeRight);
-    headGroup.add(eyeLeft);
-    headGroup.add(eyeRight);
-    eyeLeft.position.set(-0.22,0.08,0.47);
-    eyeRight.position.set(0.22,0.08,0.47);
-
-    // MOUTH
-    const mouth = new THREE.Mesh(
-        new THREE.BoxGeometry(0.20,0.025,0.025),
-        new THREE.MeshBasicMaterial({color:0x48eaff})
-    );
-    mouth.position.set(0,-0.20,0.49);
-    headGroup.add(mouth);
-
-    // ARMS
-    const arms = [];
-    for (let side of [-1,1]) {
-        const arm = sphere(side*0.82,-0.55,0,0.19,0.65,0.20,material);
-        arm.rotation.z = side * -0.18;
-        arms.push(arm);
-
-        const hand = sphere(side*0.88,-1.13,0.04,0.20,0.20,0.20,glowMaterial);
+        sphere(
+            headGroup, 0, 0.21, 0.29,
+            0.39, 0.12, 0.13, hairMat
+        );
     }
 
-    // SHOULDERS
-    sphere(-0.72,-0.12,0,0.28,0.28,0.28,darkMaterial);
-    sphere(0.72,-0.12,0,0.28,0.28,0.28,darkMaterial);
+    // Face panel for android
+    if (android || hologram) {
+        sphere(
+            headGroup, 0, -0.045, 0.37,
+            0.40, 0.39, 0.11, darkMat
+        );
+    }
 
+    // Ears
+    for (const side of [-1, 1]) {
+        sphere(
+            headGroup, side * 0.48, -0.04, 0,
+            0.105, 0.19, 0.13,
+            android ? metalMat : headMat
+        );
+
+        if (android || hologram) {
+            sphere(
+                headGroup, side * 0.52, -0.04, 0.10,
+                0.045, 0.07, 0.045, lightMat
+            );
+        }
+    }
+
+    // Eyes
+    const eyes = [];
+
+    for (const side of [-1, 1]) {
+
+        const eyeGroup = new THREE.Group();
+        eyeGroup.position.set(side * 0.19, 0.045, 0.405);
+        headGroup.add(eyeGroup);
+
+        sphere(
+            eyeGroup, 0, 0, 0,
+            0.105, 0.062, 0.035,
+            human ? whiteEyeMat : eyeMat
+        );
+
+        sphere(
+            eyeGroup, 0, 0, 0.028,
+            0.038, 0.043, 0.018,
+            human ? darkMat : lightMat
+        );
+
+        sphere(
+            eyeGroup, 0.012, 0.014, 0.045,
+            0.012, 0.012, 0.009,
+            whiteEyeMat
+        );
+
+        eyes.push(eyeGroup);
+
+        // Eyebrows
+        if (human) {
+            const brow = sphere(
+                headGroup,
+                side * 0.19, 0.145, 0.415,
+                0.105, 0.022, 0.025,
+                darkMat
+            );
+            brow.rotation.z = side * -0.08;
+        }
+    }
+
+    // Nose
+    if (human) {
+        sphere(
+            headGroup, 0, -0.085, 0.42,
+            0.065, 0.10, 0.075, skinMat
+        );
+    }
+
+    // Mouth
+    const mouth = sphere(
+        headGroup, 0, -0.245, 0.405,
+        0.11, 0.018, 0.025,
+        human ? darkMat : lightMat
+    );
+
+    // Smile line
+    const smile = new THREE.Mesh(
+        new THREE.TorusGeometry(0.09, 0.009, 6, 24, Math.PI),
+        new THREE.MeshBasicMaterial({
+            color: human ? 0x8c4b4b : primaryColor
+        })
+    );
+
+    smile.position.set(0, -0.23, 0.42);
+    smile.rotation.z = Math.PI;
+    headGroup.add(smile);
+
+    // ======================================
+    // ARMS
+    // ======================================
+
+    const arms = [];
+
+    for (const side of [-1, 1]) {
+
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 0.68, 0.22, 0);
+        character.add(pivot);
+
+        const upper = sphere(
+            pivot, side * 0.02, -0.34, 0,
+            0.16, 0.42, 0.17,
+            bodyMat
+        );
+
+        const elbow = sphere(
+            pivot, side * 0.03, -0.68, 0,
+            0.14, 0.14, 0.14,
+            metalMat
+        );
+
+        sphere(
+            pivot, side * 0.04, -0.91, 0.01,
+            0.14, 0.34, 0.14,
+            bodyMat
+        );
+
+        sphere(
+            pivot, side * 0.04, -1.18, 0.05,
+            0.16, 0.17, 0.16,
+            human ? skinMat : metalMat
+        );
+
+        if (android || hologram) {
+            sphere(
+                pivot, side * 0.04, -0.91, 0.14,
+                0.06, 0.13, 0.025, lightMat
+            );
+        }
+
+        arms.push(pivot);
+    }
+
+    // ======================================
+    // LEGS
+    // ======================================
+
+    const legs = [];
+
+    for (const side of [-1, 1]) {
+
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 0.30, -0.93, 0);
+        character.add(pivot);
+
+        sphere(
+            pivot, 0, -0.35, 0,
+            0.24, 0.43, 0.25,
+            bodyMat
+        );
+
+        sphere(
+            pivot, 0, -0.79, 0,
+            0.19, 0.43, 0.19,
+            metalMat
+        );
+
+        sphere(
+            pivot, 0, -1.10, 0.12,
+            0.22, 0.13, 0.34,
+            darkMat
+        );
+
+        legs.push(pivot);
+    }
+
+    // ======================================
     // ENERGY RINGS
+    // ======================================
+
     const rings = [];
-    for(let i=0;i<3;i++){
+
+    for (let i = 0; i < 3; i++) {
+
         const ring = new THREE.Mesh(
-            new THREE.TorusGeometry(1.2+i*0.22,0.012,8,100),
+            new THREE.TorusGeometry(
+                1.15 + i * 0.20,
+                0.012,
+                8,
+                100
+            ),
             new THREE.MeshBasicMaterial({
-                color:i===1 ? 0xa65cff : 0x39dfff,
-                transparent:true,
-                opacity:0.65-i*0.12
+                color: i === 1 ? 0xb15cff : primaryColor,
+                transparent: true,
+                opacity: 0.7 - i * 0.12
             })
         );
-        ring.rotation.x = Math.PI/2 + i*0.18;
-        ring.position.y = -1.45 + i*0.13;
-        group.add(ring);
+
+        ring.rotation.x = Math.PI / 2 + i * 0.22;
+        ring.position.y = -2.08 + i * 0.12;
+
+        character.add(ring);
         rings.push(ring);
     }
 
-    // FLOATING PARTICLES
-    const particleCount = 180;
-    const particlePositions = new Float32Array(particleCount*3);
+    // ======================================
+    // PARTICLES
+    // ======================================
 
-    for(let i=0;i<particleCount;i++){
-        particlePositions[i*3] = (Math.random()-0.5)*5;
-        particlePositions[i*3+1] = (Math.random()-0.5)*5;
-        particlePositions[i*3+2] = (Math.random()-0.5)*3;
+    const particleCount = 130;
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 5;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 5;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 3;
     }
 
     const particleGeometry = new THREE.BufferGeometry();
+
     particleGeometry.setAttribute(
         "position",
-        new THREE.BufferAttribute(particlePositions,3)
+        new THREE.BufferAttribute(positions, 3)
     );
 
     const particles = new THREE.Points(
         particleGeometry,
         new THREE.PointsMaterial({
-            color:0x58dfff,
-            size:0.035,
-            transparent:true,
-            opacity:0.8
+            color: primaryColor,
+            size: 0.035,
+            transparent: true,
+            opacity: 0.85
         })
     );
+
     scene.add(particles);
 
-    // LIGHT BASE
+    // ======================================
+    // BASE
+    // ======================================
+
     const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(1.1,1.3,0.12,64),
+        new THREE.CylinderGeometry(1.05, 1.25, 0.10, 48),
         new THREE.MeshBasicMaterial({
-            color:0x164b82,
-            transparent:true,
-            opacity:0.7
+            color: 0x164c85,
+            transparent: true,
+            opacity: 0.65
         })
     );
-    base.position.y = -1.72;
-    group.add(base);
+
+    base.position.y = -2.18;
+    character.add(base);
+
+    // ======================================
+    // ANIMATION ENGINE
+    // ======================================
 
     const clock = new THREE.Clock();
 
-    function animate(){
-        requestAnimationFrame(animate);
+    let animationFrame = null;
+    let active = true;
+
+    function animate() {
+
+        if (!active) return;
+
+        animationFrame = requestAnimationFrame(animate);
 
         const t = clock.getElapsedTime();
-        const mode = CONFIG_MODE;
-        const mood = CONFIG_MOOD;
-        const action = CONFIG_ACTION;
 
-        // BODY MOVEMENT
-        group.position.y = Math.sin(t*1.5)*0.07;
+        const mode = CFG.mode;
+        const mood = CFG.mood;
+        const action = CFG.action;
 
-        if(mode === "Raqs"){
-            group.rotation.y = Math.sin(t*1.8)*0.28;
-            group.rotation.z = Math.sin(t*3)*0.08;
-            arms[0].rotation.z = -0.3 + Math.sin(t*4)*0.35;
-            arms[1].rotation.z = 0.3 + Math.cos(t*4)*0.35;
-        } else if(mode === "Energetik"){
-            group.rotation.y = Math.sin(t*2.5)*0.18;
-            arms[0].rotation.z = -0.3 + Math.sin(t*3)*0.2;
-            arms[1].rotation.z = 0.3 + Math.cos(t*3)*0.2;
-        } else if(mode === "Sokin"){
-            group.rotation.y = Math.sin(t*0.5)*0.06;
+        // Natural floating
+        character.position.y = Math.sin(t * 1.5) * 0.045;
+
+        // BODY ANIMATION
+        if (mode === "Raqs") {
+
+            character.rotation.y = Math.sin(t * 2) * 0.28;
+            character.rotation.z = Math.sin(t * 3) * 0.07;
+
+            arms[0].rotation.z = -0.45 + Math.sin(t * 4) * 0.5;
+            arms[1].rotation.z = 0.45 + Math.cos(t * 4) * 0.5;
+
+            legs[0].rotation.x = Math.sin(t * 4) * 0.20;
+            legs[1].rotation.x = Math.cos(t * 4) * 0.20;
+
+        } else if (mode === "Energetik") {
+
+            character.rotation.y = Math.sin(t * 2.5) * 0.18;
+
+            arms[0].rotation.z = -0.4 + Math.sin(t * 3) * 0.3;
+            arms[1].rotation.z = 0.4 + Math.cos(t * 3) * 0.3;
+
+        } else if (mode === "Sokin") {
+
+            character.rotation.y = Math.sin(t * 0.5) * 0.06;
+            arms[0].rotation.z = -0.12;
+            arms[1].rotation.z = 0.12;
+
         } else {
-            group.rotation.y = Math.sin(t*0.8)*0.13;
-            arms[0].rotation.z = -0.18 + Math.sin(t*1.3)*0.08;
-            arms[1].rotation.z = 0.18 + Math.cos(t*1.3)*0.08;
+
+            character.rotation.y = Math.sin(t * 0.8) * 0.12;
+
+            arms[0].rotation.z = -0.15 + Math.sin(t * 1.3) * 0.08;
+            arms[1].rotation.z = 0.15 + Math.cos(t * 1.3) * 0.08;
         }
 
-        // HEAD EXPRESSION
-        headGroup.rotation.y = Math.sin(t*0.8)*0.12;
-        headGroup.rotation.x = Math.sin(t*0.7)*0.06;
-
-        if(mood === "thinking"){
-            headGroup.rotation.x = -0.15 + Math.sin(t)*0.04;
+        // GREETING
+        if (action === "greeting" || mood === "greeting") {
+            arms[1].rotation.z = 0.65 + Math.sin(t * 6) * 0.30;
         }
-        if(mood === "happy" || mood === "greeting"){
-            headGroup.rotation.z = Math.sin(t*2)*0.04;
+
+        // HEAD MOVEMENT
+        headGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
+        headGroup.rotation.x = Math.sin(t * 0.7) * 0.045;
+
+        if (mood === "thinking") {
+            headGroup.rotation.x = -0.15 + Math.sin(t) * 0.035;
+        }
+
+        if (mood === "happy" || mood === "greeting") {
+            headGroup.rotation.z = Math.sin(t * 2) * 0.035;
         } else {
-            headGroup.rotation.z = Math.sin(t*0.7)*0.02;
+            headGroup.rotation.z = Math.sin(t * 0.7) * 0.015;
         }
 
         // BLINKING
-        const blink = (Math.sin(t*1.7)>0.985) ? 0.15 : 1;
-        eyeLeft.scale.y = 0.045*blink;
-        eyeRight.scale.y = 0.045*blink;
+        const blink = Math.sin(t * 1.7) > 0.985 ? 0.12 : 1;
 
-        // SPEAKING MOUTH
-        if(action === "speaking" || mood === "greeting"){
-            mouth.scale.y = 1 + Math.abs(Math.sin(t*10))*5;
-        } else {
-            mouth.scale.y = 1;
-        }
-
-        // RING MOVEMENT
-        rings.forEach((ring,i)=>{
-            ring.rotation.z = t*(0.25+i*0.12)*(i%2===0 ? 1 : -1);
+        eyes.forEach(eye => {
+            eye.scale.y = blink;
         });
 
-        particles.rotation.y = t*0.025;
-        particles.rotation.x = Math.sin(t*0.3)*0.08;
+        // SPEAKING
+        const speaking = action === "speaking";
 
-        blueLight.intensity = 2.5 + Math.sin(t*2)*0.8;
+        if (speaking) {
+            mouth.scale.y = 1 + Math.abs(Math.sin(t * 11)) * 4;
+            mouth.scale.x = 1 + Math.abs(Math.sin(t * 8)) * 0.5;
+        } else {
+            mouth.scale.y = 1;
+            mouth.scale.x = 1;
+        }
 
-        renderer.render(scene,camera);
+        // SMILE
+        smile.visible = mood === "happy" || mood === "greeting";
+
+        // ENERGY RINGS
+        rings.forEach((ring, i) => {
+            ring.rotation.z =
+                t * (0.25 + i * 0.12) *
+                (i % 2 === 0 ? 1 : -1);
+        });
+
+        // PARTICLES
+        particles.rotation.y = t * 0.025;
+        particles.rotation.x = Math.sin(t * 0.3) * 0.08;
+
+        // LIGHT PULSE
+        blueLight.intensity = 3 + Math.sin(t * 2) * 0.7;
+        core.scale.setScalar(1 + Math.sin(t * 3) * 0.12);
+
+        renderer.render(scene, camera);
     }
 
     animate();
 
-    window.addEventListener("resize",()=>{
-        const w = root.clientWidth;
-        const h = root.clientHeight;
-        camera.aspect = w/h;
+    // ======================================
+    // RESPONSIVE SCREEN
+    // ======================================
+
+    function resizeScene() {
+
+        const width = root.clientWidth;
+        const height = root.clientHeight;
+
+        if (!width || !height) return;
+
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
-        renderer.setSize(w,h);
+
+        renderer.setSize(width, height);
+    }
+
+    window.addEventListener("resize", resizeScene);
+
+    if (window.ResizeObserver) {
+        const observer = new ResizeObserver(resizeScene);
+        observer.observe(root);
+    }
+
+    // ======================================
+    // CLEANUP
+    // ======================================
+
+    window.addEventListener("pagehide", function() {
+        active = false;
+
+        if (animationFrame !== null) {
+            cancelAnimationFrame(animationFrame);
+        }
+
+        renderer.dispose();
     });
 
 })();
 </script>
+
 </div>
 </body>
 </html>
 """
 
-    replacements = {
-        "CONFIG_HEIGHT": str(height),
-        "CONFIG_NAME": json.dumps(config["name"], ensure_ascii=False)[1:-1],
-        "CONFIG_STYLE": json.dumps(config["style"], ensure_ascii=False)[1:-1],
-        "CONFIG_MODE": json.dumps(config["mode"], ensure_ascii=False)[1:-1],
-        "CONFIG_MOOD": json.dumps(config["mood"], ensure_ascii=False),
-        "CONFIG_ACTION": json.dumps(config["action"], ensure_ascii=False),
-    }
+    html_code = html_code.replace(
+        "CONFIG_HEIGHT", str(int(height))
+    )
 
-    for key, value in replacements.items():
-        html_code = html_code.replace(key, value)
+    html_code = html_code.replace(
+        "CONFIG_JSON", config_json
+    )
 
-    components.html(html_code, height=height + 10, scrolling=False)
-
-# ---------------------- NAVIGATION ----------------------
+    components.html(
+        html_code,
+        height=int(height) + 10,
+        scrolling=False
+    )
+    
+# ---------------------- NAVIGATION ----------------------------
 
 def go_to_page(page):
     st.session_state["selected_page"] = page
