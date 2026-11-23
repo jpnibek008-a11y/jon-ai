@@ -31,8 +31,8 @@ except Exception:
 
 APP_NAME = "JON AI LIVE"
 APP_VERSION = "10.1"
-DEFAULT_MODEL = "gemini-2.5-flash"
 
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 PAGES = [
     "🏠 Bosh sahifa", "🤖 AI Chat", "🎓 Ta'lim markazi",
     "📊 PowerPoint", "🌐 Tarjimon", "🎨 Rasm prompti",
@@ -1695,11 +1695,11 @@ def render_settings():
     st.markdown("---")
     st.subheader("🧠 Gemini modeli")
 
-    model_options = [
-        "gemini-2.5-flash",
-        "gemini-2.5-pro",
-        "gemini-2.0-flash"
-    ]
+model options = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash",
+                                 ]
+                                 
 
     current_model = st.session_state.get("model", DEFAULT_MODEL)
 
