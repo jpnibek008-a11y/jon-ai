@@ -1695,25 +1695,22 @@ def render_settings():
     st.markdown("---")
     st.subheader("🧠 Gemini modeli")
 
-DEFAULT_MODEL = "gemini-3.5-flash-lite"
+    DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
-model_options = [
-    "gemini-3.5-flash-lite",
-]
+    model_options = [
+        "gemini-3.5-flash-lite",
+    ]
 
-current_model = st.session_state.get("model", DEFAULT_MODEL)
+    current_model = st.session_state.get("model", DEFAULT_MODEL)
 
-selected_model = st.selectbox(
-    "Gemini modeli",
-    model_options,
-    index=0
-)
-
-st.session_state["model"] = selected_model
-                                 
-        st.success(f"Tanlangan model: {selected_model}")
-
-    st.markdown("---")
+    selected_model = st.selectbox(
+        "Gemini modeli",
+        model_options,
+        index=0
+    )
+    st.session_state["model"] = selected_model
+    st.success(f"Tanlangan model: {selected_model}")
+        st.markdown("---")
     st.subheader("🔌 API ulanishini tekshirish")
 
     if st.button("Ulanishni tekshirish", use_container_width=True):
