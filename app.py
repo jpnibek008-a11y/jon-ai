@@ -1695,7 +1695,7 @@ def render_settings():
     st.markdown("---")
     st.subheader("🧠 Gemini modeli")
 
-model options = [
+model_options = [
     "gemini-3.5-flash-lite",
     "gemini-3.8-flash",
                                  ]
