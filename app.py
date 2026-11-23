@@ -1,14 +1,18 @@
 
 # ============================================================
-# JON AI LIVE 9.2 — NEXT GENERATION VIRTUAL INTELLIGENCE
-# Streamlit + Gemini AI + Three.js Dual 3D Characters
+# JON AI LIVE 10.0
+# NEXT GENERATION VIRTUAL INTELLIGENCE
+# UNIFIED STREAMLIT APPLICATION
 # ============================================================
 
 import json
 import re
 import time
 import random
+import base64
+import html
 from io import BytesIO
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -18,20 +22,26 @@ from google import genai
 from pptx import Presentation
 from pptx.util import Inches, Pt
 
-
 # ============================================================
-# 1. CONFIGURATION
+# 1. APPLICATION CONFIGURATION
 # ============================================================
 
-APP_VERSION = "9.3"
-DEFAULT_MODEL = "gemini-3.8-flash"
+APP_NAME = "JON AI LIVE"
+APP_VERSION = "10.0"
+
+# Model nomi Settings orqali o'zgartirilishi mumkin.
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 st.set_page_config(
-    page_title="JON AI LIVE 9.3",
+    page_title=f"{APP_NAME} {APP_VERSION}",
     page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ============================================================
+# 2. APPLICATION NAVIGATION
+# ============================================================
 
 PAGES = [
     "🏠 Bosh sahifa",
@@ -48,19 +58,37 @@ PAGES = [
     "💎 Premium"
 ]
 
+# ============================================================
+# 3. AI SYSTEM PERSONALITY
+# ============================================================
+
 JON_CORE = """
 Siz JON AI nomli professional sun'iy intellekt yordamchisiz.
-Foydalanuvchiga asosan o'zbek tilida javob bering.
-Ingliz, rus va boshqa tillarda ham yordam bera olasiz.
-Bilmagan ma'lumotni to'qib chiqarmang.
-Ta'lim, dasturlash, biznes, tarjima, ijod va tahlilda yordam bering.
-Javoblaringiz aniq, tartibli va amaliy bo'lsin.
-Murakkab vazifalarni bosqichlarga ajrating.
+
+Sizning vazifalaringiz:
+
+1. Foydalanuvchiga o'zbek tilida sifatli javob berish.
+2. Ingliz, rus va boshqa tillarda yordam berish.
+3. Dasturlash va texnik muammolarni yechish.
+4. Ta'lim va imtihonlarga tayyorlash.
+5. Biznes va startap g'oyalarini ishlab chiqish.
+6. Tarjima va matn yozishda yordam berish.
+7. Excel va ma'lumotlarni tahlil qilish.
+8. Taqdimotlar tayyorlash.
+9. Ijodiy loyihalarda yordam berish.
+
+QOIDALAR:
+
+- Bilmagan ma'lumotni to'qib chiqarmang.
+- Noaniq ma'lumotni aniq deb ko'rsatmang.
+- Javoblarni tartibli va tushunarli yozing.
+- Murakkab vazifalarni bosqichlarga ajrating.
+- Professional va hurmatli ohangda muloqot qiling.
+- Foydalanuvchining maxfiyligini hurmat qiling.
 """
 
-
 # ============================================================
-# 2. SESSION STATE
+# 4. SESSION STATE
 # ============================================================
 
 DEFAULTS = {
@@ -68,216 +96,100 @@ DEFAULTS = {
     "tasks": [],
     "character_name": "JON",
     "character_style": "Hologramma",
+    "character_animation": "Raqs",
     "api_key": "",
     "model": DEFAULT_MODEL,
     "intro_enabled": True,
-    "character_animation": "Raqs",
     "copied_prompt": "",
     "last_answer": "",
-    "motivation_quote": ""
+    "motivation_quote": "",
+    "premium": False,
+    "selected_page": "🏠 Bosh sahifa",
+    "user_name": "",
+    "camera_enabled": False
 }
 
 for key, value in DEFAULTS.items():
+
     if key not in st.session_state:
+
         st.session_state[key] = value
 
+
+# ============================================================
+# 5. MOTIVATIONAL CONTENT
+# ============================================================
+
 MOTIVATIONAL_QUOTES = [
-    ("TO‘XTAMA. SEN HALI ORZU QILGAN MANZILINGGA YETMAGANSAN!",
-     "Charchashing mumkin. Dam olishing mumkin. Ammo taslim bo‘lma."),
-    ("BUGUNGI HARAKATING — ERTANGI G‘ALABANG.",
-     "Kichik qadamlar ham seni katta maqsadga yaqinlashtiradi."),
-    ("QO‘RQMA. BOSHLAGAN ISHINGNI OXIRIGA YETKAZ!",
-     "Mukammal bo‘lish shart emas. Muhimi — davom etish."),
-    ("SEN O‘YLAGANINGDAN HAM KUCHLISAN!",
-     "Qiyinchiliklar seni to‘xtatish uchun emas, chiniqtirish uchun."),
-    ("BUGUN TASLIM BO‘LMA — ERTANGI O‘ZING SENGA RAHMAT AYTADI.",
-     "Maqsadingni esla va yana bir qadam tashla."),
-    ("ORZULAR KUTMAYDI. HARAKATNI BUGUN BOSHLА!",
-     "Vaqtingni qadrlagin. O‘z tarixingni o‘zing yarat.")
+
+    (
+        "TO‘XTAMA. SEN HALI ORZU QILGAN MANZILINGGA YETMAGANSAN!",
+        "Charchashing mumkin. Ammo taslim bo‘lma."
+    ),
+
+    (
+        "BUGUNGI HARAKATING — ERTANGI G‘ALABANG.",
+        "Kichik qadamlar katta natijalarga olib keladi."
+    ),
+
+    (
+        "QO‘RQMA. BOSHLAGAN ISHINGNI OXIRIGA YETKAZ!",
+        "Mukammal bo‘lish shart emas. Muhimi davom etish."
+    ),
+
+    (
+        "SEN O‘YLAGANINGDAN HAM KUCHLISAN!",
+        "Qiyinchiliklar seni chiniqtirish uchun mavjud."
+    ),
+
+    (
+        "BUGUN TASLIM BO‘LMA!",
+        "Ertangi o‘zing bugungi harakating uchun rahmat aytadi."
+    ),
+
+    (
+        "ORZULAR KUTMAYDI. HARAKATNI BUGUN BOSHLА!",
+        "O‘z tarixingni o‘zing yarat."
+    )
+
 ]
 
-if not st.session_state.get("motivation_quote"):
-    st.session_state.motivation_quote = random.choice(MOTIVATIONAL_QUOTES)
+if not st.session_state.motivation_quote:
 
-
-# ============================================================
-# 3. DESIGN
-# ============================================================
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
-
-:root {
-    --blue:#26baff;
-    --purple:#9b5cff;
-    --bg:#050817;
-}
-
-.stApp {
-    background:
-    radial-gradient(ellipse at 15% 10%,#17265a 0%,transparent 35%),
-    radial-gradient(ellipse at 85% 20%,#25124d 0%,transparent 35%),
-    linear-gradient(145deg,#050817,#080d20 60%,#09051c);
-    color:#edf4ff;
-    font-family:Inter,sans-serif;
-}
-
-h1,h2,h3 {color:#edf4ff !important;}
-
-.hero-title {
-    font-family:Orbitron,sans-serif;
-    font-weight:800;
-    letter-spacing:4px;
-    text-align:center;
-    font-size:clamp(28px,5vw,58px);
-    background:linear-gradient(90deg,#fff,#43caff,#a879ff);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.hero-subtitle {
-    color:#9bb8df;
-    text-align:center;
-    letter-spacing:4px;
-    font-size:11px;
-}
-
-.panel {
-    background:linear-gradient(145deg,#111c3bdb,#10102bdd);
-    border:1px solid #4e8cff44;
-    border-radius:18px;
-    padding:20px;
-    margin-bottom:15px;
-    box-shadow:0 0 25px #176dff12;
-}
-
-.motivation-frame {
-    position:relative;
-    overflow:hidden;
-    margin:22px auto 24px;
-    padding:20px 24px;
-    max-width:980px;
-    text-align:center;
-    border:1px solid rgba(72,205,255,.72);
-    border-radius:20px;
-    background:linear-gradient(125deg,rgba(9,28,58,.94),rgba(32,17,65,.92));
-    box-shadow:0 0 14px rgba(38,186,255,.22),inset 0 0 24px rgba(80,155,255,.10);
-    animation:motivationGlow 4s ease-in-out infinite;
-}
-.motivation-frame:before {
-    content:"";
-    position:absolute;
-    inset:5px;
-    border:1px solid rgba(157,111,255,.34);
-    border-radius:15px;
-    pointer-events:none;
-}
-.motivation-label {
-    color:#65dcff;
-    font-size:11px;
-    font-weight:800;
-    letter-spacing:3px;
-    margin-bottom:10px;
-}
-.motivation-quote {
-    position:relative;
-    color:#fff;
-    font-family:Orbitron,Inter,sans-serif;
-    font-size:clamp(15px,2.2vw,23px);
-    line-height:1.55;
-    font-weight:800;
-    text-shadow:0 0 14px rgba(65,194,255,.34);
-}
-.motivation-subtext {
-    position:relative;
-    color:#b9cce8;
-    font-size:13px;
-    margin-top:9px;
-}
-.motivation-signature {
-    position:relative;
-    color:#72dfff;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:3px;
-    margin-top:13px;
-}
-@keyframes motivationGlow {
-    0%,100% {box-shadow:0 0 12px rgba(38,186,255,.18),inset 0 0 20px rgba(80,155,255,.08)}
-    50% {box-shadow:0 0 25px rgba(38,186,255,.34),inset 0 0 28px rgba(130,90,255,.13)}
-}
-@media(max-width:600px) {
-    .motivation-frame {padding:17px 14px;margin:16px auto 19px;border-radius:16px}
-    .motivation-label {font-size:10px;letter-spacing:2px}
-    .motivation-subtext {font-size:12px}
-}
-
-.feature-card {
-    background:linear-gradient(145deg,#111c38,#15102e);
-    border:1px solid #438dff44;
-    border-radius:15px;
-    padding:18px;
-    min-height:115px;
-}
-
-div.stButton > button {
-    border-radius:12px;
-    border:1px solid #438dff77;
-    background:linear-gradient(100deg,#123c75,#39206b);
-    color:white;
-    font-weight:600;
-    min-height:42px;
-}
-
-div.stButton > button:hover {
-    border-color:#54d5ff;
-    color:white;
-    box-shadow:0 0 15px #36baff55;
-}
-
-[data-testid="stSidebar"] {
-    background:linear-gradient(180deg,#080e23,#100d29);
-    border-right:1px solid #3475b944;
-}
-
-[data-testid="stChatMessage"] {
-    background:#101a35;
-    border:1px solid #3d6eb533;
-    border-radius:14px;
-}
-
-.stTextInput input,.stTextArea textarea {
-    background:#0d1730 !important;
-    color:white !important;
-    border-color:#3475b966 !important;
-}
-
-hr {border-color:#3c69a633;}
-</style>
-""", unsafe_allow_html=True)
-
+    st.session_state.motivation_quote = random.choice(
+        MOTIVATIONAL_QUOTES
+    )
 
 # ============================================================
-# 4. GEMINI AI ENGINE
+# 6. GEMINI API KEY MANAGEMENT
 # ============================================================
 
 def get_api_key():
-    key = str(st.session_state.get("api_key", "")).strip()
+
+    key = str(
+        st.session_state.get("api_key", "")
+    ).strip()
 
     if key:
         return key
 
     try:
-        return str(st.secrets.get("GEMINI_API_KEY", "")).strip()
+
+        return str(
+            st.secrets.get("GEMINI_API_KEY", "")
+        ).strip()
+
     except Exception:
+
         return ""
 
 
 def get_client():
+
     key = get_api_key()
 
     if not key:
+
         raise ValueError(
             "Gemini API kalitini Sozlamalar bo'limiga kiriting."
         )
@@ -285,59 +197,94 @@ def get_client():
     return genai.Client(api_key=key)
 
 
+# ============================================================
+# 7. ERROR HANDLING
+# ============================================================
+
 def explain_api_error(error):
+
     message = str(error)
     lower = message.lower()
 
     if "429" in message or "resource_exhausted" in lower:
+
         return (
-            "API so'rov limiti yoki kvotasi tugagan. "
-            "Google AI Studio'dagi limitlarni tekshiring."
+            "API kvotasi yoki so'rov limiti tugagan. "
+            "Google AI Studio limitlarini tekshiring."
         )
 
     if "503" in message or "unavailable" in lower:
-        return "Gemini serveri vaqtincha band. Keyinroq qayta urinib ko'ring."
 
-    if "401" in message or "403" in message or "api key" in lower:
-        return "API kalit noto'g'ri yoki uning ruxsatlari yetarli emas."
+        return (
+            "Gemini serveri vaqtincha band. "
+            "Keyinroq qayta urinib ko'ring."
+        )
+
+    if "401" in message or "403" in message:
+
+        return (
+            "API kalit noto'g'ri yoki ruxsat yetarli emas."
+        )
 
     if "404" in message or "not found" in lower:
+
         return (
-            "Tanlangan model topilmadi. Sozlamalardan "
-            "gemini-2.5-flash modelini tanlab ko'ring."
+            "Model topilmadi. Sozlamalardan "
+            "mavjud Gemini modelini tanlang."
         )
 
     if "timeout" in lower:
+
         return "Ulanish vaqti tugadi. Internetni tekshiring."
 
     return f"Gemini xatosi: {message[:400]}"
 
 
+# ============================================================
+# 8. GEMINI AI ENGINE
+# ============================================================
+
 def ask_ai(prompt, extra_context="", history=None):
+
     try:
+
         client = get_client()
-        model = st.session_state.get("model", DEFAULT_MODEL)
+
+        model = st.session_state.get(
+            "model",
+            DEFAULT_MODEL
+        )
 
         conversation = [JON_CORE]
 
         for item in (history or [])[-12:]:
+
             role = item.get("role", "user")
             content = item.get("content", "")
 
-            if content:
-                role_name = (
-                    "Foydalanuvchi"
-                    if role == "user"
-                    else "JON AI"
-                )
-                conversation.append(f"{role_name}: {content}")
+            if not content:
+                continue
+
+            role_name = (
+                "Foydalanuvchi"
+                if role == "user"
+                else "JON AI"
+            )
+
+            conversation.append(
+                f"{role_name}: {content}"
+            )
 
         if extra_context:
+
             conversation.append(
                 f"Qo'shimcha kontekst:\n{extra_context}"
             )
 
-        conversation.append(f"Foydalanuvchi: {prompt}")
+        conversation.append(
+            f"Foydalanuvchi: {prompt}"
+        )
+
         conversation.append("JON AI:")
 
         response = client.models.generate_content(
@@ -348,1280 +295,2461 @@ def ask_ai(prompt, extra_context="", history=None):
         answer = getattr(response, "text", None)
 
         if not answer:
-            return "AI javob qaytarmadi. Qayta urinib ko'ring."
+
+            return (
+                "AI javob qaytarmadi. "
+                "Savolingizni qayta yuboring."
+            )
 
         return answer.strip()
 
     except Exception as error:
+
         return explain_api_error(error)
 
 
+# ============================================================
+# 9. MODEL CONNECTION TEST
+# ============================================================
+
 def check_model():
+
     try:
+
         client = get_client()
-        model = st.session_state.get("model", DEFAULT_MODEL)
+
+        model = st.session_state.get(
+            "model",
+            DEFAULT_MODEL
+        )
 
         response = client.models.generate_content(
             model=model,
             contents="Salom. Faqat OK deb javob ber."
         )
 
-        return bool(getattr(response, "text", None))
+        return bool(
+            getattr(response, "text", None)
+        )
 
     except Exception as error:
+
         st.error(explain_api_error(error))
+
         return False
 
 
 # ============================================================
-# 5. THREE.JS — HUMAN + ANDROID
+# 10. DESIGN SYSTEM
 # ============================================================
 
-def show_character(height=610, cinematic=True):
-
-    name = json.dumps(
-        st.session_state.get("character_name", "JON")
-    )
-
-    style = json.dumps(
-        st.session_state.get("character_style", "Hologramma")
-    )
-
-    animation = json.dumps(
-        st.session_state.get("character_animation", "Raqs")
-    )
-
-    intro = (
-        "true"
-        if cinematic and st.session_state.get("intro_enabled", True)
-        else "false"
-    )
-
-    html = r"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+st.markdown("""
 <style>
-*{box-sizing:border-box}
-html,body{
- margin:0;width:100%;height:100%;
- overflow:hidden;background:transparent;
- font-family:Arial,sans-serif
+
+@import url(
+'https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap'
+);
+
+:root {
+    --blue: #26baff;
+    --purple: #9b5cff;
+    --background: #050817;
 }
-#scene{
- width:100%;height:100%;position:relative;
- overflow:hidden;border-radius:18px;
- background:
- radial-gradient(ellipse at 50% 60%,#142b58aa,transparent 55%),
- radial-gradient(ellipse at 50% 20%,#21134b99,transparent 65%),
- #050817;
+
+.stApp {
+
+    background:
+        radial-gradient(
+            ellipse at 15% 10%,
+            #17265a 0%,
+            transparent 35%
+        ),
+        radial-gradient(
+            ellipse at 85% 20%,
+            #25124d 0%,
+            transparent 35%
+        ),
+        linear-gradient(
+            145deg,
+            #050817,
+            #080d20 60%,
+            #09051c
+        );
+
+    color: #edf4ff;
+
+    font-family: Inter, sans-serif;
+
 }
-canvas{display:block;width:100%;height:100%}
-.brand{
- position:absolute;top:15px;width:100%;
- text-align:center;z-index:3;pointer-events:none
+
+h1, h2, h3 {
+
+    color: #edf4ff !important;
+
 }
-.brand h1{
- margin:0;color:white;font-size:32px;
- letter-spacing:7px;text-shadow:0 0 20px #36caff
+
+.hero-title {
+
+    font-family: Orbitron, sans-serif;
+
+    font-weight: 800;
+
+    letter-spacing: 4px;
+
+    text-align: center;
+
+    font-size: clamp(28px, 5vw, 58px);
+
+    background: linear-gradient(
+        90deg,
+        #ffffff,
+        #43caff,
+        #a879ff
+    );
+
+    -webkit-background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
 }
-.brand span{
- color:#a8c8ef;font-size:9px;letter-spacing:4px
+
+.hero-subtitle {
+
+    color: #9bb8df;
+
+    text-align: center;
+
+    letter-spacing: 4px;
+
+    font-size: 11px;
+
 }
-.status{
- position:absolute;top:78px;left:50%;
- transform:translateX(-50%);z-index:3;
- color:#5effce;font-size:10px;letter-spacing:3px;
+
+.panel {
+
+    background: linear-gradient(
+        145deg,
+        #111c3bdb,
+        #10102bdd
+    );
+
+    border: 1px solid #4e8cff44;
+
+    border-radius: 18px;
+
+    padding: 20px;
+
+    margin-bottom: 15px;
+
+    box-shadow: 0 0 25px #176dff12;
+
 }
-.labels{
- position:absolute;bottom:17px;width:100%;
- display:flex;justify-content:space-around;
- z-index:3;pointer-events:none
+
+.feature-card {
+
+    background: linear-gradient(
+        145deg,
+        #111c38,
+        #15102e
+    );
+
+    border: 1px solid #438dff44;
+
+    border-radius: 15px;
+
+    padding: 18px;
+
+    min-height: 115px;
+
 }
-.label{
- text-align:center;color:#c5e8ff;
- font-size:11px;letter-spacing:3px
+
+.motivation-frame {
+
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 22px;
+
+    margin: 20px auto;
+
+    text-align: center;
+
+    border: 1px solid #42cfff;
+
+    border-radius: 18px;
+
+    background: linear-gradient(
+        125deg,
+        #091c3a,
+        #201141
+    );
+
+    box-shadow: 0 0 22px #26baff33;
+
+    animation: motivationGlow 4s infinite;
+
 }
-.label small{
- display:block;margin-top:5px;color:#7b9dc9;
- font-size:8px;letter-spacing:2px
+
+.motivation-label {
+
+    color: #65dcff;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 3px;
+
 }
-#intro{
- position:absolute;inset:0;z-index:5;
- display:flex;align-items:center;justify-content:center;
- background:radial-gradient(circle,#173b75,#090d22 65%,#02040c);
- color:white;font-size:14px;letter-spacing:5px;
- transition:opacity 1.5s;pointer-events:none
+
+.motivation-quote {
+
+    color: white;
+
+    font-family: Orbitron, sans-serif;
+
+    font-size: clamp(15px, 2.2vw, 23px);
+
+    line-height: 1.6;
+
+    font-weight: 800;
+
 }
-#intro.hide{opacity:0}
+
+.motivation-subtext {
+
+    color: #b9cce8;
+
+    font-size: 13px;
+
+    margin-top: 10px;
+
+}
+
+@keyframes motivationGlow {
+
+    0%,100% {
+
+        box-shadow: 0 0 12px #26baff22;
+
+    }
+
+    50% {
+
+        box-shadow: 0 0 28px #26baff66;
+
+    }
+
+}
+
+div.stButton > button {
+
+    border-radius: 12px;
+
+    border: 1px solid #438dff77;
+
+    background: linear-gradient(
+        100deg,
+        #123c75,
+        #39206b
+    );
+
+    color: white;
+
+    font-weight: 600;
+
+    min-height: 42px;
+
+    transition: 0.3s;
+
+}
+
+div.stButton > button:hover {
+
+    border-color: #54d5ff;
+
+    color: white;
+
+    box-shadow: 0 0 15px #36baff55;
+
+}
+
+[data-testid="stSidebar"] {
+
+    background: linear-gradient(
+        180deg,
+        #080e23,
+        #100d29
+    );
+
+    border-right: 1px solid #3475b944;
+
+}
+
+[data-testid="stChatMessage"] {
+
+    background: #101a35;
+
+    border: 1px solid #3d6eb533;
+
+    border-radius: 14px;
+
+}
+
+.stTextInput input,
+.stTextArea textarea {
+
+    background: #0d1730 !important;
+
+    color: white !important;
+
+    border-color: #3475b966 !important;
+
+}
+
+hr {
+
+    border-color: #3c69a633;
+
+}
+
+@media(max-width:600px) {
+
+    .motivation-frame {
+
+        padding: 16px;
+
+    }
+
+    .hero-title {
+
+        letter-spacing: 2px;
+
+    }
+
+}
+
 </style>
-</head>
-<body>
-<div id="scene">
- <div class="brand">
-  <h1>JON AI</h1>
-  <span>NEXT GENERATION VIRTUAL INTELLIGENCE</span>
- </div>
- <div class="status" id="status">● SYSTEM ONLINE</div>
- <div class="labels">
-  <div class="label">HUMAN<small>VIRTUAL INTELLIGENCE</small></div>
-  <div class="label">ANDROID<small>ADVANCED TECHNOLOGY</small></div>
- </div>
- <div id="intro">INITIALIZING JON AI</div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-(function(){
- const box=document.getElementById("scene");
- const intro=document.getElementById("intro");
- const status=document.getElementById("status");
-
- const characterName=__NAME__;
- const characterStyle=__STYLE__;
- const animationMode=__ANIMATION__;
- const introEnabled=__INTRO__;
-
- const greetingStatus=document.getElementById("status");
- greetingStatus.textContent="● SALOM, "+characterName.toUpperCase()+"!";
- setTimeout(()=>{
-  if(greetingStatus) greetingStatus.textContent="● SYSTEM ONLINE";
- },3500);
-
- if(!window.THREE){
-  intro.innerText="3D ENGINE LOAD FAILED";
-  return;
- }
-
- const THREE=window.THREE;
- const scene=new THREE.Scene();
- scene.fog=new THREE.FogExp2(0x050817,0.025);
-
- const camera=new THREE.PerspectiveCamera(
-  42,box.clientWidth/box.clientHeight,0.1,100
- );
- camera.position.set(0,1.0,10.8);
-
- const renderer=new THREE.WebGLRenderer({
-  antialias:true,alpha:true
- });
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
- renderer.setSize(box.clientWidth,box.clientHeight);
- renderer.outputEncoding=THREE.sRGBEncoding;
- box.appendChild(renderer.domElement);
-
- scene.add(new THREE.AmbientLight(0x7899ff,1.5));
-
- const light=new THREE.PointLight(0x38bfff,3,30);
- light.position.set(-4,5,5);
- scene.add(light);
-
- const purpleLight=new THREE.PointLight(0x974bff,2.5,25);
- purpleLight.position.set(4,3,3);
- scene.add(purpleLight);
-
- const floorLight=new THREE.PointLight(0x176bff,2,20);
- floorLight.position.set(0,-3,4);
- scene.add(floorLight);
-
- let humanColor=0x167bd1;
- let androidColor=0x101d38;
-
- if(characterStyle==="Realistik robot"){
-  humanColor=0x9b8d82;
-  androidColor=0x52677d;
- }
- if(characterStyle==="Multfilm uslubi"){
-  humanColor=0x40aaff;
-  androidColor=0x6e45ff;
- }
- if(characterStyle==="Fantastik"){
-  humanColor=0x8c48e8;
-  androidColor=0x00bfff;
- }
-
- function mat(color,metal=0.5,rough=0.3){
-  return new THREE.MeshStandardMaterial({
-   color,metalness:metal,roughness:rough,
-   emissive:color,emissiveIntensity:0.16
-  });
- }
-
- const blue=mat(humanColor,0.7,0.25);
- const cyan=mat(0x55dfff,0.6,0.2);
- const dark=mat(androidColor,0.8,0.28);
- const skin=mat(0xc58e78,0.1,0.55);
- const purple=mat(0x8c48e8,0.7,0.2);
-
- function sphere(parent,x,y,z,sx,sy,sz,m){
-  const mesh=new THREE.Mesh(
-   new THREE.SphereGeometry(1,24,18),m
-  );
-  mesh.position.set(x,y,z);
-  mesh.scale.set(sx,sy,sz);
-  parent.add(mesh);
-  return mesh;
- }
-
- function cylinder(parent,x,y,z,rt,rb,h,m){
-  const mesh=new THREE.Mesh(
-   new THREE.CylinderGeometry(rt,rb,h,20),m
-  );
-  mesh.position.set(x,y,z);
-  parent.add(mesh);
-  return mesh;
- }
-
- function ring(parent,r,t,color,x,y,z,rx){
-  const mesh=new THREE.Mesh(
-   new THREE.TorusGeometry(r,t,10,90),
-   new THREE.MeshBasicMaterial({
-    color,transparent:true,opacity:0.75
-   })
-  );
-  mesh.position.set(x,y,z);
-  mesh.rotation.x=rx;
-  parent.add(mesh);
-  return mesh;
- }
-
- function createPerson(isAndroid){
-  const root=new THREE.Group();
-  root.position.x=isAndroid?2.0:-2.0;
-  scene.add(root);
-
-  const body=new THREE.Group();
-  root.add(body);
-
-  const bodyMat=isAndroid?dark:blue;
-  const faceMat=isAndroid?dark:skin;
-
-  cylinder(body,-0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
-  cylinder(body,0.22,-1.05,0,0.14,0.18,0.9,bodyMat);
-
-  sphere(body,-0.22,-1.48,0.1,0.2,0.12,0.3,blue);
-  sphere(body,0.22,-1.48,0.1,0.2,0.12,0.3,blue);
-
-  sphere(body,0,-0.05,0,0.57,0.78,0.32,bodyMat);
-  sphere(body,0,-0.08,0.3,0.35,0.45,0.1,blue);
-
-  cylinder(body,0,0.72,0,0.15,0.17,0.32,bodyMat);
-
-  const head=new THREE.Group();
-  head.position.y=1.35;
-  body.add(head);
-
-  sphere(
-   head,0,0,0,
-   isAndroid?0.45:0.43,
-   isAndroid?0.48:0.55,
-   0.36,faceMat
-  );
-
-  if(isAndroid){
-   sphere(head,0,0.02,0.29,0.36,0.25,0.12,blue);
-   sphere(head,0,0.02,0.39,0.29,0.13,0.035,cyan);
-   sphere(head,-0.43,0,0,0.07,0.15,0.13,cyan);
-   sphere(head,0.43,0,0,0.07,0.15,0.13,cyan);
-  }else{
-   sphere(head,0,0.39,-0.015,0.39,0.19,0.34,dark);
-  }
-
-  const eyeMat=new THREE.MeshBasicMaterial({color:0xb9f8ff});
-  const eyeL=sphere(head,-0.15,0.07,0.34,0.06,0.035,0.025,eyeMat);
-  const eyeR=sphere(head,0.15,0.07,0.34,0.06,0.035,0.025,eyeMat);
-  const mouth=sphere(head,0,-0.19,0.36,0.1,0.018,0.02,purple);
-
-  const armL=new THREE.Group();
-  const armR=new THREE.Group();
-
-  armL.position.set(-0.57,0.36,0);
-  armR.position.set(0.57,0.36,0);
-  body.add(armL,armR);
-
-  const armMat=isAndroid?blue:skin;
-
-  cylinder(armL,0,-0.38,0,0.14,0.17,0.7,armMat);
-  cylinder(armR,0,-0.38,0,0.14,0.17,0.7,armMat);
-
-  sphere(armL,0,-0.78,0,0.15,0.16,0.15,armMat);
-  sphere(armR,0,-0.78,0,0.15,0.16,0.15,armMat);
-
-  const rings=[
-   ring(root,0.9,0.018,0x45cfff,0,-1.7,0,0),
-   ring(root,0.75,0.012,0x8e55ff,0,-1.7,0,0)
-  ];
-
-  return {root,body,head,mouth,eyeL,eyeR,armL,armR,rings};
- }
-
- const human=createPerson(false);
- const android=createPerson(true);
-
- const energyRings=[];
-
- for(let i=0;i<5;i++){
-  energyRings.push(
-   ring(scene,2.3+i*0.24,0.008,
-    i%2?0x9655ff:0x36cfff,
-    0,-0.1,-1.2,Math.PI/2)
-  );
- }
-
- const portal=new THREE.Group();
- portal.position.set(0,0.1,-1.5);
- scene.add(portal);
-
- ring(portal,3.15,0.035,0x4d9fff,0,0,0,Math.PI/2);
-
- const count=innerWidth<600?250:500;
- const positions=new Float32Array(count*3);
-    
- const clock=new THREE.Clock();
-
- function animate(){
-  requestAnimationFrame(animate);
-  const t=clock.getElapsedTime();
-
-  [human,android].forEach((p,i)=>{
-   const phase=i*Math.PI;
-   let speed=1.0, bounce=0.10, armSwing=0.22, bodySwing=0.025;
-
-   if(animationMode==="Raqs"){
-    speed=2.0; bounce=0.17; armSwing=0.62; bodySwing=0.10;
-   }else if(animationMode==="Tabiiy harakat"){
-    speed=1.15; bounce=0.09; armSwing=0.25; bodySwing=0.035;
-   }else if(animationMode==="Sokin"){
-    speed=0.65; bounce=0.035; armSwing=0.08; bodySwing=0.012;
-   }else if(animationMode==="Energetik"){
-    speed=2.8; bounce=0.22; armSwing=0.78; bodySwing=0.14;
-   }
-
-   p.root.position.y=Math.sin(t*speed+phase)*bounce;
-   p.body.rotation.z=Math.sin(t*speed*0.8+phase)*bodySwing;
-   p.head.rotation.y=Math.sin(t*0.8+phase)*0.12;
-   p.head.rotation.x=Math.sin(t*1.5+phase)*0.035;
-
-   p.armL.rotation.z=
-    Math.sin(t*speed*1.7+phase)*armSwing+0.08;
-
-   p.armR.rotation.z=
-    -Math.sin(t*speed*1.7+phase)*armSwing-0.08;
-
-   p.root.rotation.y=Math.sin(t*0.5+phase)*0.08;
-
-   const blink=(Math.sin(t*2.4+phase)>0.985)?0.08:1;
-   p.eyeL.scale.y=0.035*blink;
-   p.eyeR.scale.y=0.035*blink;
-
-   p.mouth.scale.y=0.018+Math.abs(Math.sin(t*3+phase))*0.025;
-
-   p.rings.forEach((r,j)=>{
-    r.rotation.z=t*(j?0.4:-0.3);
-   });
-  });
-
-  energyRings.forEach((r,i)=>{
-   r.rotation.z=t*(i%2?0.12:-0.12);
-   r.material.opacity=0.4+Math.sin(t*2+i)*0.3;
-  });
-
-  portal.rotation.z=t*0.08;
-  particles.rotation.y=t*0.025;
-  particles.rotation.x=Math.sin(t*0.2)*0.08;
-
-  light.intensity=2.4+Math.sin(t*2)*0.5;
-  purpleLight.intensity=2+Math.cos(t*1.7)*0.5;
-
-  renderer.render(scene,camera);
- }
-
- animate();
-
- if(introEnabled){
-  setTimeout(()=>intro.classList.add("hide"),1200);
-  setTimeout(()=>intro.remove(),3000);
- }else{
-  intro.remove();
- }
-
- window.addEventListener("resize",()=>{
-  const w=box.clientWidth;
-  const h=box.clientHeight;
-  camera.aspect=w/h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w,h);
- });
-
-})();
-</script>
-</body>
-</html>
-"""
-
-    html = html.replace("__NAME__", name)
-    html = html.replace("__STYLE__", style)
-    html = html.replace("__ANIMATION__", animation)
-    html = html.replace("__INTRO__", intro)
-
-    components.html(html, height=height, scrolling=False)
+""", unsafe_allow_html=True)
 
 
 # ============================================================
-# 6. SIDEBAR NAVIGATION
+# 1-QISM TUGADI
+# KEYINGI QISM:
+# HUMAN + ANDROID 3D ENGINE
 # ============================================================
 
-with st.sidebar:
-    st.markdown("# 💎 JON AI")
-    st.caption("NEXT GENERATION INTELLIGENCE")
-    st.markdown("---")
+# ============================================================
+# JON AI LIVE 10.0
+# 2-QISM — BIR DONA MUSTAQIL AI PERSONAJ
+# ============================================================
 
-    selected_page = st.radio(
-        "Navigatsiya",
-        PAGES,
-        index=PAGES.index(st.session_state.get("page", PAGES[0]))
-        if st.session_state.get("page") in PAGES else 0
+def detect_jon_mood():
+    """Oxirgi AI javobidan personaj kayfiyatini aniqlash."""
+
+    answer = str(
+        st.session_state.get("last_answer", "")
+    ).lower()
+
+    if any(word in answer for word in [
+        "tabrik", "ajoyib", "zo'r", "muvaffaqiyat",
+        "excellent", "congratulations", "great"
+    ]):
+        return "happy"
+
+    if any(word in answer for word in [
+        "afsus", "xato", "xavf", "ehtiyot",
+        "sorry", "warning", "error"
+    ]):
+        return "serious"
+
+    if any(word in answer for word in [
+        "salom", "xush kelibsiz", "qandaysiz",
+        "hello", "welcome", "hi"
+    ]):
+        return "greeting"
+
+    if any(word in answer for word in [
+        "o'ylab", "tahlil", "sababi", "demak",
+        "analysis", "because", "therefore"
+    ]):
+        return "thinking"
+
+    return "neutral"
+
+
+def show_character(height=640, cinematic=True):
+    """
+    JON — yagona markaziy AI personaj.
+    Mustaqil animatsiya, mimika va maxsus effektlar.
+    """
+
+    character_name = st.session_state.get(
+        "character_name", "JON"
     )
 
-    st.session_state.page = selected_page
+    character_style = st.session_state.get(
+        "character_style", "Hologramma"
+    )
 
-    st.markdown("---")
-    st.markdown("### SYSTEM STATUS")
+    animation_mode = st.session_state.get(
+        "animation", "Tabiiy harakat"
+    )
 
-    if get_api_key():
-        st.success("API KEY: CONFIGURED")
-    else:
-        st.warning("API KEY: NOT CONFIGURED")
+    mood = detect_jon_mood()
 
-    st.caption(f"JON AI VERSION {APP_VERSION}")
+    style_map = {
+        "Hologramma": "hologram",
+        "Realistik robot": "robot",
+        "Multfilm uslubi": "cartoon",
+        "Fantastik": "fantasy"
+    }
 
+    visual_style = style_map.get(
+        character_style, "hologram"
+    )
 
+    html_doc = r"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport"
+            content="width=device-width, initial-scale=1">
+
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          overflow: hidden;
+          background: transparent;
+          font-family: Arial, sans-serif;
+        }
+
+        #jon-stage {
+          width: 100%;
+          height: HEIGHTpx;
+          position: relative;
+          overflow: hidden;
+          border-radius: 24px;
+          background:
+            radial-gradient(
+              ellipse at 50% 65%,
+              #123b68 0%,
+              #071a36 42%,
+              #020817 100%
+            );
+          border: 1px solid rgba(0,220,255,.35);
+          box-shadow:
+            0 0 35px rgba(0,180,255,.2),
+            inset 0 0 45px rgba(0,180,255,.08);
+        }
+
+        #jon-canvas {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        .jon-heading {
+          position: absolute;
+          top: 20px;
+          left: 0;
+          width: 100%;
+          text-align: center;
+          color: #78eaff;
+          font-size: 13px;
+          letter-spacing: 5px;
+          text-shadow: 0 0 15px #00dfff;
+          pointer-events: none;
+        }
+
+        .jon-name {
+          position: absolute;
+          bottom: 47px;
+          width: 100%;
+          text-align: center;
+          color: #d9faff;
+          font-size: 17px;
+          font-weight: bold;
+          letter-spacing: 7px;
+          text-shadow: 0 0 15px #00dfff;
+          pointer-events: none;
+        }
+
+        .jon-status {
+          position: absolute;
+          bottom: 21px;
+          width: 100%;
+          text-align: center;
+          color: #6dffdc;
+          font-size: 10px;
+          letter-spacing: 4px;
+          pointer-events: none;
+        }
+
+        .jon-dot {
+          display: inline-block;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #00ffc3;
+          margin-right: 8px;
+          box-shadow: 0 0 12px #00ffc3;
+          animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+          50% { opacity: .2; }
+        }
+
+        .jon-corner {
+          position: absolute;
+          width: 35px;
+          height: 35px;
+          border-color: rgba(0,220,255,.5);
+          pointer-events: none;
+        }
+
+        .top-left {
+          top: 12px;
+          left: 12px;
+          border-top: 1px solid;
+          border-left: 1px solid;
+        }
+
+        .top-right {
+          top: 12px;
+          right: 12px;
+          border-top: 1px solid;
+          border-right: 1px solid;
+        }
+
+        .bottom-left {
+          bottom: 12px;
+          left: 12px;
+          border-bottom: 1px solid;
+          border-left: 1px solid;
+        }
+
+        .bottom-right {
+          bottom: 12px;
+          right: 12px;
+          border-bottom: 1px solid;
+          border-right: 1px solid;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div id="jon-stage">
+        <div class="jon-heading">
+          JON AI • AUTONOMOUS INTELLIGENCE
+        </div>
+
+        <div class="jon-corner top-left"></div>
+        <div class="jon-corner top-right"></div>
+        <div class="jon-corner bottom-left"></div>
+        <div class="jon-corner bottom-right"></div>
+
+        <canvas id="jon-canvas"></canvas>
+
+        <div class="jon-name">JON</div>
+
+        <div class="jon-status">
+          <span class="jon-dot"></span>
+          ONLINE • READY TO INTERACT
+        </div>
+      </div>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+      <script>
+      (() => {
+        const stage = document.getElementById("jon-stage");
+        const canvas = document.getElementById("jon-canvas");
+
+        if (!window.THREE) {
+          stage.innerHTML +=
+            '<div style="color:white;text-align:center;padding:200px 15px;">3D tizim yuklanmadi. Internetni tekshiring.</div>';
+          return;
+        }
+
+        const THREE = window.THREE;
+
+        const STYLE = VISUAL_STYLE;
+        const MODE = ANIMATION_MODE;
+        const MOOD = CHARACTER_MOOD;
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x020817, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(
+          38, 1, 0.1, 100
+        );
+
+        camera.position.set(0, 2.2, 9.5);
+        camera.lookAt(0, 2.1, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+          canvas: canvas,
+          alpha: true,
+          antialias: true
+        });
+
+        renderer.setPixelRatio(
+          Math.min(window.devicePixelRatio || 1, 2)
+        );
+
+        renderer.shadowMap.enabled = true;
+
+        // YORUG'LIK
+        scene.add(
+          new THREE.AmbientLight(0x9bcfff, 1.25)
+        );
+
+        const keyLight = new THREE.PointLight(
+          0x00cfff, 4, 18
+        );
+
+        keyLight.position.set(0, 5, 4);
+        scene.add(keyLight);
+
+        const sideLight = new THREE.PointLight(
+          0x714dff, 3, 15
+        );
+
+        sideLight.position.set(-4, 2, -2);
+        scene.add(sideLight);
+
+        const backLight = new THREE.PointLight(
+          0x00ffcc, 2.5, 15
+        );
+
+        backLight.position.set(4, 3, -3);
+        scene.add(backLight);
+
+        // MATERIALLAR
+        const isHologram = STYLE === "hologram";
+        const isCartoon = STYLE === "cartoon";
+        const isFantasy = STYLE === "fantasy";
+
+        const bodyMaterial = new THREE.MeshStandardMaterial({
+          color: isCartoon ? 0x55bce9 : 0x5b9bc4,
+          metalness: isHologram ? 0.72 : 0.48,
+          roughness: 0.3,
+          emissive: 0x063b68,
+          emissiveIntensity: 0.8,
+          transparent: isHologram,
+          opacity: isHologram ? 0.86 : 1
+        });
+
+        const darkMaterial = new THREE.MeshStandardMaterial({
+          color: 0x10253d,
+          metalness: 0.78,
+          roughness: 0.25
+        });
+
+        const faceMaterial = new THREE.MeshStandardMaterial({
+          color: isCartoon ? 0xffc69c : 0x8cb9d8,
+          metalness: 0.25,
+          roughness: 0.45,
+          transparent: isHologram,
+          opacity: isHologram ? 0.9 : 1
+        });
+
+        const glowColor = isFantasy ? 0xd08aff : 0x35edff;
+
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+          color: glowColor
+        });
+
+        // YORDAMCHI FUNKSIYALAR
+        function sphere(parent, material,
+                        x, y, z, sx, sy, sz) {
+          const object = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 32, 24),
+            material
+          );
+
+          object.position.set(x, y, z);
+          object.scale.set(sx, sy, sz);
+          parent.add(object);
+
+          return object;
+        }
+
+        function cylinder(parent, material,
+                          x, y, z, rt, rb, h) {
+          const object = new THREE.Mesh(
+            new THREE.CylinderGeometry(rt, rb, h, 24),
+            material
+          );
+
+          object.position.set(x, y, z);
+          parent.add(object);
+
+          return object;
+        }
+
+        // JONNING YAGONA TANASI
+        const jon = new THREE.Group();
+        scene.add(jon);
+
+        const torso = new THREE.Group();
+        jon.add(torso);
+
+        // OYOQLAR
+        const leftLeg = new THREE.Group();
+        leftLeg.position.set(-0.22, 1.35, 0);
+        jon.add(leftLeg);
+
+        cylinder(
+          leftLeg, darkMaterial,
+          0, -0.25, 0, 0.17, 0.13, 0.9
+        );
+
+        sphere(
+          leftLeg, bodyMaterial,
+          0, -0.72, 0.08, 0.22, 0.11, 0.34
+        );
+
+        const rightLeg = new THREE.Group();
+        rightLeg.position.set(0.22, 1.35, 0);
+        jon.add(rightLeg);
+
+        cylinder(
+          rightLeg, darkMaterial,
+          0, -0.25, 0, 0.17, 0.13, 0.9
+        );
+
+        sphere(
+          rightLeg, bodyMaterial,
+          0, -0.72, 0.08, 0.22, 0.11, 0.34
+        );
+
+        // TANA
+        sphere(
+          torso, bodyMaterial,
+          0, 2.35, 0, 0.62, 0.77, 0.36
+        );
+
+        // KO'KRAK ENERGIYA MARKAZI
+        const chestCore = sphere(
+          torso, eyeMaterial,
+          0, 2.48, 0.34, 0.13, 0.13, 0.055
+        );
+
+        const chestRing = new THREE.Mesh(
+          new THREE.TorusGeometry(0.22, 0.012, 8, 48),
+          new THREE.MeshBasicMaterial({
+            color: glowColor,
+            transparent: true,
+            opacity: 0.75
+          })
+        );
+
+        chestRing.position.set(0, 2.48, 0.35);
+        torso.add(chestRing);
+
+        // BO'YIN
+        cylinder(
+          torso, darkMaterial,
+          0, 3.02, 0, 0.17, 0.17, 0.28
+        );
+
+        // BOSH — ALOHIDA HARAKATLANADI
+        const head = new THREE.Group();
+        head.position.set(0, 3.58, 0);
+        jon.add(head);
+
+        sphere(
+          head, faceMaterial,
+          0, 0, 0, 0.48, 0.55, 0.4
+        );
+
+        // Soch / yuqori qoplama
+        if (!isHologram && !STYLE === "robot") {
+          sphere(
+            head, darkMaterial,
+            0, 0.28, -0.04,
+            0.47, 0.25, 0.39
+          );
+        }
+
+        // Peshona energiya belgisi
+        sphere(
+          head, eyeMaterial,
+          0, 0.27, 0.385,
+          0.055, 0.055, 0.025
+        );
+
+        // KO'ZLAR
+        const leftEye = sphere(
+          head, eyeMaterial,
+          -0.17, 0.04, 0.36,
+          0.055, 0.035, 0.025
+        );
+
+        const rightEye = sphere(
+          head, eyeMaterial,
+          0.17, 0.04, 0.36,
+          0.055, 0.035, 0.025
+        );
+
+        // KO'Z ATROFIDAGI YORUG'LIK
+        sphere(
+          head, eyeMaterial,
+          -0.17, 0.04, 0.34,
+          0.11, 0.075, 0.018
+        ).material = eyeMaterial.clone();
+
+        sphere(
+          head, eyeMaterial,
+          0.17, 0.04, 0.34,
+          0.11, 0.075, 0.018
+        ).material = eyeMaterial.clone();
+
+        // OG'IZ — GAPIRISH ANIMATSIYASI
+        const mouth = new THREE.Mesh(
+          new THREE.SphereGeometry(1, 20, 12),
+          eyeMaterial
+        );
+
+        mouth.position.set(0, -0.2, 0.385);
+        mouth.scale.set(0.09, 0.018, 0.025);
+        head.add(mouth);
+
+        // QULOQ / SENSORLAR
+        sphere(
+          head, darkMaterial,
+          -0.47, -0.02, 0,
+          0.09, 0.18, 0.13
+        );
+
+        sphere(
+          head, darkMaterial,
+          0.47, -0.02, 0,
+          0.09, 0.18, 0.13
+        );
+
+        sphere(
+          head, eyeMaterial,
+          -0.5, -0.02, 0.04,
+          0.045, 0.045, 0.045
+        );
+
+        sphere(
+          head, eyeMaterial,
+          0.5, -0.02, 0.04,
+          0.045, 0.045, 0.045
+        );
+
+        // QO'LLAR
+        const leftArm = new THREE.Group();
+        leftArm.position.set(-0.58, 2.77, 0);
+        jon.add(leftArm);
+
+        sphere(
+          leftArm, bodyMaterial,
+          0, -0.12, 0, 0.2, 0.22, 0.2
+        );
+
+        cylinder(
+          leftArm, bodyMaterial,
+          -0.08, -0.48, 0,
+          0.15, 0.12, 0.62
+        );
+
+        sphere(
+          leftArm, darkMaterial,
+          -0.08, -0.82, 0,
+          0.15, 0.15, 0.15
+        );
+
+        const rightArm = new THREE.Group();
+        rightArm.position.set(0.58, 2.77, 0);
+        jon.add(rightArm);
+
+        sphere(
+          rightArm, bodyMaterial,
+          0, -0.12, 0, 0.2, 0.22, 0.2
+        );
+
+        cylinder(
+          rightArm, bodyMaterial,
+          0.08, -0.48, 0,
+          0.15, 0.12, 0.62
+        );
+
+        sphere(
+          rightArm, darkMaterial,
+          0.08, -0.82, 0,
+          0.15, 0.15, 0.15
+        );
+
+        // ORQA HALQA
+        const halo = new THREE.Mesh(
+          new THREE.TorusGeometry(0.75, 0.018, 8, 100),
+          new THREE.MeshBasicMaterial({
+            color: glowColor,
+            transparent: true,
+            opacity: 0.8
+          })
+        );
+
+        halo.position.set(0, 4.35, -0.15);
+        halo.rotation.x = 0.3;
+        jon.add(halo);
+
+        // ENERGIYA HALQALARI
+        const energyRings = [];
+
+        for (let i = 0; i < 3; i++) {
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(
+              1.1 + i * 0.38,
+              0.012,
+              8,
+              100
+            ),
+            new THREE.MeshBasicMaterial({
+              color: i % 2 ? 0x8c5aff : 0x00dfff,
+              transparent: true,
+              opacity: 0.35
+            })
+          );
+
+          ring.position.y = 0.1 + i * 0.08;
+          ring.rotation.x = Math.PI / 2;
+          ring.scale.set(1.2, 1.2, 1);
+          scene.add(ring);
+
+          energyRings.push(ring);
+        }
+
+        // YERDAGI ENERGIYA MAYDONI
+        const platform = new THREE.Mesh(
+          new THREE.CircleGeometry(1.7, 80),
+          new THREE.MeshBasicMaterial({
+            color: 0x00aaff,
+            transparent: true,
+            opacity: 0.12
+          })
+        );
+
+        platform.rotation.x = -Math.PI / 2;
+        platform.position.y = 0.02;
+        scene.add(platform);
+
+        // ZARRACHALAR
+        const particleCount = 1000;
+        const particlePositions = new Float32Array(
+          particleCount * 3
+        );
+
+        const particleSpeeds = [];
+
+        for (let i = 0; i < particleCount; i++) {
+          particlePositions[i * 3] =
+            (Math.random() - 0.5) * 10;
+
+          particlePositions[i * 3 + 1] =
+            Math.random() * 7;
+
+          particlePositions[i * 3 + 2] =
+            (Math.random() - 0.5) * 5;
+
+          particleSpeeds.push(
+            0.004 + Math.random() * 0.012
+          );
+        }
+
+        const particleGeometry = new THREE.BufferGeometry();
+
+        particleGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(
+            particlePositions, 3
+          )
+        );
+
+        const particleMaterial = new THREE.PointsMaterial({
+          color: glowColor,
+          size: 0.035,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(
+          particleGeometry,
+          particleMaterial
+        );
+
+        scene.add(particles);
+
+        // MAYDA YULDUZLAR
+        const stars = [];
+
+        for (let i = 0; i < 30; i++) {
+          const star = new THREE.Mesh(
+            new THREE.SphereGeometry(0.025, 8, 8),
+            new THREE.MeshBasicMaterial({
+              color: 0x9cefff
+            })
+          );
+
+          star.position.set(
+            (Math.random() - 0.5) * 9,
+            Math.random() * 6,
+            -1.5
+          );
+
+          scene.add(star);
+          stars.push(star);
+        }
+
+        // PAYDO BO'LISH EFFEKTI
+        jon.scale.setScalar(0.01);
+
+        const clock = new THREE.Clock();
+        let elapsed = 0;
+        let blinkTimer = 0;
+        let isBlinking = false;
+
+        function resize() {
+          const width = stage.clientWidth;
+          const height = stage.clientHeight;
+
+          camera.aspect = width / height;
+          camera.position.z = width < 500 ? 11 : 9.5;
+          camera.updateProjectionMatrix();
+
+          renderer.setSize(width, height, false);
+        }
+
+        resize();
+
+        if (window.ResizeObserver) {
+          const observer = new ResizeObserver(resize);
+          observer.observe(stage);
+        } else {
+          window.addEventListener("resize", resize);
+        }
+
+        // MUSTAQIL HARAKAT
+        function animate() {
+          requestAnimationFrame(animate);
+
+          const delta = Math.min(
+            clock.getDelta(), 0.05
+          );
+
+          elapsed += delta;
+
+          const t = elapsed;
+
+          // Personajning paydo bo'lishi
+          const entrance = Math.min(t / 2.2, 1);
+          const smoothEntrance =
+            entrance * entrance * (3 - 2 * entrance);
+
+          const targetScale =
+            0.85 * smoothEntrance;
+
+          jon.scale.setScalar(targetScale);
+
+          // Nafas olish va tabiiy harakat
+          jon.position.y =
+            0.06 * Math.sin(t * 1.8);
+
+          torso.scale.y =
+            1 + Math.sin(t * 1.8) * 0.012;
+
+          // Boshning mustaqil harakati
+          head.rotation.y =
+            Math.sin(t * 0.65) * 0.16;
+
+          head.rotation.z =
+            Math.sin(t * 0.9) * 0.035;
+
+          head.rotation.x =
+            Math.sin(t * 0.7) * 0.025;
+
+          // Qo'l harakatlari
+          if (MODE === "Raqs") {
+            leftArm.rotation.z =
+              Math.sin(t * 2.5) * 0.55;
+
+            rightArm.rotation.z =
+              -Math.sin(t * 2.5) * 0.55;
+
+            jon.rotation.z =
+              Math.sin(t * 1.8) * 0.045;
+
+          } else if (MODE === "Energetik") {
+            leftArm.rotation.z =
+              Math.sin(t * 3.5) * 0.75;
+
+            rightArm.rotation.z =
+              -Math.sin(t * 3.5) * 0.75;
+
+          } else if (MODE === "Sokin") {
+            leftArm.rotation.z = 0;
+            rightArm.rotation.z = 0;
+
+          } else {
+            leftArm.rotation.z =
+              Math.sin(t * 1.2) * 0.12;
+
+            rightArm.rotation.z =
+              -Math.sin(t * 1.2) * 0.12;
+          }
+
+          // Kayfiyatga qarab harakat
+          if (MOOD === "greeting") {
+            rightArm.rotation.z =
+              -0.7 + Math.sin(t * 4) * 0.18;
+          }
+
+          if (MOOD === "happy") {
+            jon.rotation.z =
+              Math.sin(t * 2.2) * 0.06;
+
+            leftArm.rotation.z =
+              Math.sin(t * 2.5) * 0.35;
+
+            rightArm.rotation.z =
+              -Math.sin(t * 2.5) * 0.35;
+          }
+
+          if (MOOD === "thinking") {
+            head.rotation.z =
+              -0.13 + Math.sin(t) * 0.025;
+
+            rightArm.rotation.z = -0.25;
+          }
+
+          if (MOOD === "serious") {
+            head.rotation.x = -0.04;
+          }
+
+          // Ko'z qisish
+          blinkTimer += delta;
+
+          if (blinkTimer > 3.5 + Math.random() * 2) {
+            blinkTimer = 0;
+            isBlinking = true;
+          }
+
+          if (isBlinking) {
+            leftEye.scale.y = 0.005;
+            rightEye.scale.y = 0.005;
+
+            if (blinkTimer > 0.15) {
+              isBlinking = false;
+              leftEye.scale.y = 0.035;
+              rightEye.scale.y = 0.035;
+            }
+          }
+
+          // Gapirayotgandek og'iz animatsiyasi
+    
 # ============================================================
-# 7. HOME
+# 3-QISM — JON AI BOSH SAHIFASI VA NAVIGATSIYA
 # ============================================================
+
+def go_to_page(page):
+    st.session_state["selected_page"] = page
+    st.rerun()
+
+
+def render_navigation():
+    """JON AI yon navigatsiya paneli."""
+
+    with st.sidebar:
+        st.markdown(
+            """
+            <div style="
+                text-align:center;
+                padding:15px 5px;
+                border-bottom:1px solid #16456b;
+                margin-bottom:15px;
+            ">
+                <div style="
+                    font-size:38px;
+                    filter:drop-shadow(0 0 12px #00dfff);
+                ">💎</div>
+                <div style="
+                    color:#65eaff;
+                    font-size:22px;
+                    font-weight:800;
+                    letter-spacing:3px;
+                ">JON AI</div>
+                <div style="
+                    color:#8ca9c5;
+                    font-size:10px;
+                    letter-spacing:3px;
+                ">LIVE INTELLIGENCE 10.0</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        current_page = st.session_state.get(
+            "selected_page", "Bosh sahifa"
+        )
+
+        try:
+            selected_index = PAGES.index(current_page)
+        except ValueError:
+            selected_index = 0
+
+        selected_page = st.radio(
+            "NAVIGATSIYA",
+            PAGES,
+            index=selected_index,
+            key="jon_navigation"
+        )
+
+        if selected_page != current_page:
+            st.session_state["selected_page"] = selected_page
+            st.rerun()
+
+        st.divider()
+
+        st.markdown("### 👤 JON personaji")
+
+        st.caption("Personaj ko‘rinishini sozlang.")
+
+        style_options = [
+            "Hologramma",
+            "Realistik robot",
+            "Multfilm uslubi",
+            "Fantastik"
+        ]
+
+        current_style = st.session_state.get(
+            "character_style", "Hologramma"
+        )
+
+        if current_style not in style_options:
+            current_style = "Hologramma"
+
+        st.selectbox(
+            "Personaj uslubi",
+            style_options,
+            index=style_options.index(current_style),
+            key="character_style"
+        )
+
+        animation_options = [
+            "Tabiiy harakat",
+            "Raqs",
+            "Energetik",
+            "Sokin"
+        ]
+
+        current_animation = st.session_state.get(
+            "animation", "Tabiiy harakat"
+        )
+
+        if current_animation not in animation_options:
+            current_animation = "Tabiiy harakat"
+
+        st.selectbox(
+            "Harakat turi",
+            animation_options,
+            index=animation_options.index(current_animation),
+            key="animation"
+        )
+
+        st.divider()
+
+        st.markdown(
+            """
+            <div style="
+                color:#65eaff;
+                font-size:12px;
+                text-align:center;
+                letter-spacing:2px;
+            ">
+                ● SYSTEM ONLINE
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.caption(
+            f"JON AI versiyasi: {APP_VERSION}"
+        )
+
 
 def render_home():
-    st.markdown(
-        '<div class="hero-title">JON AI LIVE</div>',
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        '<div class="hero-subtitle">'
-        'NEXT GENERATION VIRTUAL INTELLIGENCE'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    """JON AI asosiy bosh sahifasi."""
 
-    quote, support = st.session_state.motivation_quote
     st.markdown(
-        f"""
-        <div class="motivation-frame">
-            <div class="motivation-label">✦ BUGUNGI MOTIVATSIYA ✦</div>
-            <div class="motivation-quote">“{quote}”</div>
-            <div class="motivation-subtext">{support}</div>
-            <div class="motivation-signature">— JON AI</div>
+        """
+        <style>
+        .jon-welcome {
+            text-align:center;
+            padding:8px 5px 12px;
+        }
+
+        .jon-welcome h1 {
+            font-size:clamp(27px, 5vw, 43px);
+            color:#8beaff;
+            letter-spacing:3px;
+            text-shadow:0 0 20px rgba(0,210,255,.55);
+            margin-bottom:5px;
+        }
+
+        .jon-welcome p {
+            color:#a9c4df;
+            font-size:14px;
+            letter-spacing:1px;
+        }
+
+        .jon-feature {
+            min-height:125px;
+            padding:18px 12px;
+            border-radius:17px;
+            text-align:center;
+            border:1px solid rgba(0,210,255,.25);
+            background:linear-gradient(
+                145deg,
+                rgba(12,42,76,.92),
+                rgba(5,17,37,.96)
+            );
+            box-shadow:0 0 18px rgba(0,150,255,.08);
+            margin-bottom:10px;
+        }
+
+        .jon-feature-icon {
+            font-size:30px;
+            margin-bottom:8px;
+        }
+
+        .jon-feature-title {
+            color:#8beaff;
+            font-size:14px;
+            font-weight:700;
+        }
+
+        .jon-feature-description {
+            color:#9db5ce;
+            font-size:11px;
+            margin-top:6px;
+        }
+
+        .jon-home-caption {
+            text-align:center;
+            color:#8daac6;
+            font-size:12px;
+            padding:8px;
+        }
+        </style>
+
+        <div class="jon-welcome">
+            <h1>JON AI</h1>
+            <p>
+                SIZNING SHAXSIY SUN'IY INTELLEKT HAMKORINGIZ
+            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    show_character(570)
+    # JONNING AVTOMATIK PAYDO BO'LISHI
+    show_character(height=590)
 
-    st.markdown("## ✨ JON AI imkoniyatlari")
+    st.markdown(
+        """
+        <div class="jon-home-caption">
+            JON sizni kutmoqda. Suhbatni boshlang!
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    cards = [
-        ("🤖 AI Chat", "Aqlli suhbat va yordam"),
-        ("🎓 Ta'lim", "IELTS, ingliz tili va bilim"),
-        ("📊 PowerPoint", "Taqdimot yaratish"),
-        ("🌐 Tarjimon", "Ko'p tilli tarjima"),
-        ("🎨 Creative Studio", "Ijodiy promptlar"),
-        ("📈 Excel", "Ma'lumotlarni tahlil qilish")
+    st.markdown("### 🚀 JON AI imkoniyatlari")
+
+    features = [
+        {
+            "icon": "🤖",
+            "title": "AI Chat",
+            "description": "JON bilan aqlli suhbat"
+        },
+        {
+            "icon": "🎓",
+            "title": "Ta'lim markazi",
+            "description": "Bilim va imtihon tayyorgarligi"
+        },
+        {
+            "icon": "📊",
+            "title": "PowerPoint",
+            "description": "Professional taqdimotlar"
+        },
+        {
+            "icon": "🌐",
+            "title": "Tarjimon",
+            "description": "Ko‘p tilli tarjima"
+        },
+        {
+            "icon": "🎨",
+            "title": "Rasm prompti",
+            "description": "Ijodiy tasvir g‘oyalari"
+        },
+        {
+            "icon": "📈",
+            "title": "Excel tahlil",
+            "description": "Ma'lumotlarni tahlil qilish"
+        }
     ]
 
-    cols = st.columns(3)
+    for start in range(0, len(features), 3):
+        cols = st.columns(3)
 
-    for i, (title, description) in enumerate(cards):
-        with cols[i % 3]:
-            st.markdown(
-                f"""
-                <div class="feature-card">
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        for col, feature in zip(
+            cols, features[start:start + 3]
+        ):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="jon-feature">
+                        <div class="jon-feature-icon">
+                            {feature["icon"]}
+                        </div>
+                        <div class="jon-feature-title">
+                            {feature["title"]}
+                        </div>
+                        <div class="jon-feature-description">
+                            {feature["description"]}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
+                if st.button(
+                    feature["title"],
+                    key="home_" + feature["title"],
+                    use_container_width=True
+                ):
+                    go_to_page(feature["title"])
+
+    st.divider()
+
+    st.markdown("### 💬 JON bilan suhbatni boshlang")
+
+    if st.button(
+        "🤖 JON AI CHAT OCHISH",
+        use_container_width=True,
+        type="primary"
+    ):
+        go_to_page("AI Chat")
+
+    st.markdown(
+        """
+        <div class="jon-home-caption">
+            JON AI LIVE 10.0 • BUILT FOR THE FUTURE
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def render_character_page():
+    """Personajni alohida ko‘rish va sozlash sahifasi."""
+
+    st.title("👤 JON — Autonomous AI Character")
+
+    st.write(
+        "JON — JON AI platformasining yagona "
+        "markaziy virtual personaji."
+    )
+
+    show_character(height=650)
+
+    st.markdown("### ⚙️ Personaj sozlamalari")
+
+    st.text_input(
+        "Personaj nomi",
+        key="character_name"
+    )
+
+    st.caption(
+        "Uslub va animatsiya turlarini chap tomondagi "
+        "navigatsiya panelidan o‘zgartirishingiz mumkin."
+    )
+
+
+# 3-QISM TUGADI
+# KEYINGI QISM: AI CHAT VA JONNING MUSTAQIL QAROR TIZIMI
 
 # ============================================================
-# 8. AI CHAT
+# JON AI LIVE 10.0 — 4-QISM
+# AI CHAT + GEMINI PERSONAJ KAYFIYATI + MOTIVATSIYA RAMKASI
 # ============================================================
+
+import json
+import re
+from datetime import date
+
+
+# ------------------------------------------------------------
+# 1. GEMINI JAVOBI VA PERSONAJ KAYFIYATINI BIRGA ANIQLASH
+# ------------------------------------------------------------
+
+def ask_jon_with_behavior(user_prompt):
+    """Gemini bir so‘rovda javob va JON kayfiyatini qaytaradi."""
+
+    try:
+        client = get_client()
+
+        if client is None:
+            return "Gemini API kalitini Sozlamalar bo‘limiga kiriting."
+
+        model_name = st.session_state.get("model", DEFAULT_MODEL)
+
+        history = st.session_state.get("messages", [])
+        history_text = ""
+
+        for item in history[-8:]:
+            role = item.get("role", "user")
+            content = item.get("content", "")
+            history_text += f"\n{role}: {content}"
+
+        system_prompt = f"""
+{JON_CORE}
+
+Sen JON nomli aqlli, samimiy va professional AI personajisan.
+
+Foydalanuvchiga aniq, foydali va tushunarli javob ber.
+Bilmagan ma'lumotingni to'qib chiqarmagin.
+
+Har bir javob bilan birga personajning kayfiyatini ham tanla.
+
+Faqat quyidagi JSON formatida javob ber:
+
+{{
+  "answer": "Foydalanuvchiga beriladigan javob",
+  "mood": "neutral",
+  "action": "speaking"
+}}
+
+mood qiymatlari:
+- greeting
+- happy
+- serious
+- thinking
+- neutral
+
+action qiymatlari:
+- greeting
+- speaking
+- thinking
+- celebrating
+- listening
+
+Kayfiyatni suhbat mazmuniga mos tanla.
+JSON dan tashqari izoh yozma.
+"""
+
+        full_prompt = f"""
+{system_prompt}
+
+OLDINGI SUHBAT:
+{history_text}
+
+FOYDALANUVCHI SAVOLI:
+{user_prompt}
+"""
+
+        response = client.models.generate_content(
+            model=model_name,
+            contents=full_prompt
+        )
+
+        raw_text = response.text.strip()
+
+        # JSON blokini ajratib olish
+        raw_text = re.sub(
+            r"^```(?:json)?\s*|\s*```$",
+            "",
+            raw_text,
+            flags=re.IGNORECASE
+        ).strip()
+
+        data = json.loads(raw_text)
+
+        answer = str(data.get("answer", "")).strip()
+        mood = str(data.get("mood", "neutral")).lower()
+        action = str(data.get("action", "speaking")).lower()
+
+        allowed_moods = {
+            "greeting", "happy", "serious",
+            "thinking", "neutral"
+        }
+
+        allowed_actions = {
+            "greeting", "speaking", "thinking",
+            "celebrating", "listening"
+        }
+
+        if mood not in allowed_moods:
+            mood = "neutral"
+
+        if action not in allowed_actions:
+            action = "speaking"
+
+        if not answer:
+            answer = "Kechirasiz, javobni qayta tayyorlashga urinib ko‘ring."
+
+        st.session_state["jon_mood"] = mood
+        st.session_state["jon_action"] = action
+        st.session_state["last_answer"] = answer
+
+        return answer
+
+    except json.JSONDecodeError:
+        # Model JSON o‘rniga oddiy matn qaytarsa
+        try:
+            fallback = raw_text.strip()
+
+            if fallback:
+                st.session_state["jon_mood"] = "neutral"
+                st.session_state["jon_action"] = "speaking"
+                st.session_state["last_answer"] = fallback
+                return fallback
+
+        except Exception:
+            pass
+
+        return "JON javobni qayta tayyorlay olmadi. Yana bir marta urinib ko‘ring."
+
+    except Exception as error:
+        return explain_api_error(error)
+
+
+# ------------------------------------------------------------
+# 2. PERSONAJ KAYFIYATINI ANIQLASH
+# ------------------------------------------------------------
+
+def detect_jon_mood():
+    mood = st.session_state.get("jon_mood", "neutral")
+
+    allowed = {
+        "greeting", "happy", "serious",
+        "thinking", "neutral"
+    }
+
+    if mood in allowed:
+        return mood
+
+    return "neutral"
+
+
+# ------------------------------------------------------------
+# 3. JON AI CHAT SAHIFASI
+# ------------------------------------------------------------
 
 def render_chat():
+
     st.title("🤖 JON AI — Intelligent Chat")
 
-    if not get_api_key():
-        st.warning("Avval Sozlamalar bo'limiga Gemini API kalitini kiriting.")
+    st.caption(
+        "JON bilan suhbatlashing. "
+        "U javob mazmuniga qarab o‘z kayfiyatini o‘zgartiradi."
+    )
 
-    c1, c2 = st.columns([5, 1])
+    # Oldingi suhbatlarni ko‘rsatish
+    messages = st.session_state.get("messages", [])
 
-    with c2:
-        if st.button("🗑️ Tozalash"):
-            st.session_state.messages = []
-            st.rerun()
+    for message in messages:
+        role = message.get("role", "assistant")
+        content = message.get("content", "")
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if role not in ("user", "assistant"):
+            continue
 
-    prompt = st.chat_input("JON AI ga savolingizni yozing...")
+        with st.chat_message(role):
+            st.markdown(content)
 
-    if prompt:
-        history = st.session_state.messages.copy()
+    # Yangi xabar
+    user_prompt = st.chat_input(
+        "JONga xabaringizni yozing..."
+    )
 
-        st.session_state.messages.append({
+    if user_prompt:
+
+        # Foydalanuvchi xabarini saqlash
+        messages = st.session_state.get("messages", [])
+
+        messages.append({
             "role": "user",
-            "content": prompt
+            "content": user_prompt
         })
 
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        st.session_state["messages"] = messages
 
+        with st.chat_message("user"):
+            st.markdown(user_prompt)
+
+        # JON javobi
         with st.chat_message("assistant"):
-            with st.spinner("JON AI fikrlamoqda..."):
-                answer = ask_ai(prompt, history=history)
-                st.markdown(answer)
-                
-        st.session_state.messages.append({
+
+            with st.spinner("JON sizni tinglamoqda..."):
+
+                answer = ask_jon_with_behavior(user_prompt)
+
+            st.markdown(answer)
+
+        messages = st.session_state.get("messages", [])
+
+        messages.append({
             "role": "assistant",
             "content": answer
         })
 
+        st.session_state["messages"] = messages
 
-# ============================================================
-# 9. EDUCATION CENTER
-# ============================================================
-
-def render_education():
-    st.title("🎓 JON AI — Ta'lim markazi")
-
-    topic = st.selectbox(
-        "Yo'nalish",
-        [
-            "Ingliz tili",
-            "IELTS",
-            "Multilevel",
-            "Grammatika",
-            "Lug'at",
-            "Speaking",
-            "Writing",
-            "Reading",
-            "Forex boshlang'ich ta'lim",
-            "Dasturlash"
-        ]
-    )
-
-    level = st.selectbox(
-        "Daraja",
-        [
-            "Beginner",
-            "Elementary",
-            "Intermediate",
-            "Upper-Intermediate",
-            "Advanced"
-        ]
-    )
-
-    task = st.selectbox(
-        "Vazifa",
-        [
-            "Mavzuni tushuntir",
-            "Dars tayyorla",
-            "Test tuz",
-            "Mashqlar yarat",
-            "Savol-javob o'tkaz",
-            "Imtihonga tayyorla"
-        ]
-    )
-
-    extra = st.text_area("Qo'shimcha talab")
-
-    if st.button("🎓 Darsni boshlash", use_container_width=True):
-        prompt = f"""
-        Yo'nalish: {topic}
-        Daraja: {level}
-        Vazifa: {task}
-        Talab: {extra}
-
-        Menga tushunarli dars tayyorla.
-        Misollar va mashqlar bilan tushuntir.
-        """
-
-        with st.spinner("Dars tayyorlanmoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown(answer)
-
-
-# ============================================================
-# 10. POWERPOINT GENERATOR
-# ============================================================
-
-def render_powerpoint():
-    st.title("📊 Professional PowerPoint Studio")
-
-    title = st.text_input("Taqdimot mavzusi")
-    count = st.slider("Slaydlar soni", 3, 15, 7)
-    language = st.selectbox(
-        "Til",
-        ["O'zbek", "English", "Русский"]
-    )
-
-    style = st.selectbox(
-        "Dizayn",
-        ["Professional", "Minimal", "Technology", "Education"]
-    )
-
-    if st.button("✨ Taqdimot yaratish", use_container_width=True):
-        if not title.strip():
-            st.warning("Mavzuni kiriting.")
-            return
-
-        prompt = f"""
-        {title} mavzusida {count} ta slayd uchun taqdimot tayyorla.
-        Til: {language}
-        Uslub: {style}
-
-        Javobni quyidagi formatda yoz:
-        SLIDE 1: Sarlavha
-        CONTENT: Mazmun
-
-        Har bir slaydni alohida ajrat.
-        """
-
-        with st.spinner("Slaydlar tayyorlanmoqda..."):
-            answer = ask_ai(prompt)
-
-        st.markdown(answer)
-
-        presentation = Presentation()
-        presentation.slide_width = Inches(13.333)
-        presentation.slide_height = Inches(7.5)
-
-        sections = re.split(
-            r"SLIDE\s*\d+\s*:",
-            answer,
-            flags=re.IGNORECASE
-        )
-
-        sections = [s.strip() for s in sections if s.strip()]
-
-        if not sections:
-            sections = [answer]
-
-        for section in sections[:count]:
-            lines = section.splitlines()
-            slide_title = lines[0][:100] if lines else title
-            body = "\n".join(lines[1:]) if len(lines) > 1 else section
-
-            slide = presentation.slides.add_slide(
-                presentation.slide_layouts[6]
-    )
-            
-            title_box = slide.shapes.add_textbox(
-                Inches(0.7), Inches(0.5),
-                Inches(12), Inches(1.0)
-            )
-
-            tf = title_box.text_frame
-            tf.text = slide_title
-
-            for paragraph in tf.paragraphs:
-                paragraph.font.size = Pt(28)
-                paragraph.font.bold = True
-
-            body_box = slide.shapes.add_textbox(
-                Inches(0.8), Inches(1.8),
-                Inches(11.8), Inches(4.8)
-            )
-
-            body_box.text_frame.text = body[:3000]
-
-            for paragraph in body_box.text_frame.paragraphs:
-                paragraph.font.size = Pt(20)
-
-        output = BytesIO()
-        presentation.save(output)
-        output.seek(0)
-
-        st.download_button(
-            "📥 PowerPoint yuklab olish",
-            data=output,
-            file_name="JON_AI_Presentation.pptx",
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            use_container_width=True
-        )
-
-
-# ============================================================
-# 11. TRANSLATOR
-# ============================================================
-
-def render_translator():
-    st.title("🌐 JON AI Translator")
-    st.caption("Zamonaviy va qadimgi tillar uchun aqlli tarjimon")
-
-    modern_languages = [
-        "O'zbek", "English", "Русский", "Turkish", "Arabic",
-        "German", "French", "Spanish", "Italian", "Chinese", "Japanese"
-    ]
-
-    ancient_languages = [
-        "Lotin tili (Classical Latin)",
-        "Qadimgi yunon tili (Ancient Greek)",
-        "Sanskrit",
-        "Qadimgi ibroniy tili (Biblical Hebrew)",
-        "Aramiy tili (Aramaic)",
-        "Qadimgi misr tili (Egyptian / hieroglyphs)",
-        "Akkad tili (Akkadian)",
-        "Shumer tili (Sumerian)",
-        "Qadimgi turkiy til (Old Turkic / runic)"
-    ]
-
-    language_group = st.radio(
-        "Tarjima yo'nalishi",
-        ["Zamonaviy tillar", "Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"],
-        horizontal=True,
-        key="translator_language_group"
-    )
-
-    if language_group == "Zamonaviy tillar":
-        source_options = ["Avtomatik aniqlash"] + modern_languages
-        target_options = modern_languages
-    elif language_group == "Qadimgi tillar":
-        source_options = ["Avtomatik aniqlash"] + ancient_languages
-        target_options = ancient_languages
-    else:
-        source_options = ["Avtomatik aniqlash"] + modern_languages + ancient_languages
-        target_options = modern_languages + ancient_languages
-
-    col1, col2 = st.columns(2)
-    with col1:
-        source = st.selectbox("Asl til", source_options, key="translator_source")
-    with col2:
-        target = st.selectbox("Tarjima tili", target_options, index=0, key="translator_target")
-
-    input_text = st.text_area(
-        "Tarjima qilinadigan matn",
-        height=180,
-        placeholder="Matn yoki qadimgi yozuvni shu yerga kiriting..."
-    )
-
-    include_notes = st.checkbox(
-        "So'zma-so'z tahlil, talaffuz va tarixiy izohni ham ko'rsatish",
-        value=True
-    )
-
-    if st.button("🌐 Tarjima qilish", use_container_width=True):
-        if not input_text.strip():
-            st.warning("Avval tarjima qilinadigan matnni kiriting.")
-            return
-
-        ancient_names = "; ".join(ancient_languages)
-        ancient_mode = (
-            language_group in ["Qadimgi tillar", "Aralash: qadimgi ↔ zamonaviy"]
-            or source in ancient_languages
-            or target in ancient_languages
-        )
-
-        if ancient_mode:
-            prompt = f"""
-Siz JON AI tarkibidagi ehtiyotkor tarixiy-filologik tarjimon sifatida ishlaysiz.
-Manba tili: {source}.
-Maqsad tili: {target}.
-Qadimgi tillar yo'nalishlari: {ancient_names}.
-
-ASOSIY QOIDA:
-Lug'at yoki ma'lumot cheklangan bo'lsa, foydalanuvchini darhol xatolik bilan to'xtatmang.
-Mavjud bilim va matn kontekstiga tayangan holda imkon qadar tarjimani davom ettiring.
-Avval so'zma-so'z tarjima qiling, keyin kerak bo'lsa ravon mazmuniy tarjimani bering.
-Aniq ma'nosi topilmagan so'zni o'ylab topmang: asl shaklini saqlang va eng yaqin ehtimoliy ma'noni
-"taxminiy" deb belgilang. O'qilishi yoki yozuvi noaniq bo'lsa, buni qisqa izohlang.
-Qadimgi yozuvni zamonaviy imloga o'zboshimchalik bilan aylantirmang.
-Agar matnning bir qismi noma'lum bo'lsa, tushunarli qismlarini baribir tarjima qiling.
-
-JAVOB TUZILISHI:
-1. So'zma-so'z tarjima.
-2. Ravon tarjima yoki umumiy mazmun.
-3. Muhim so'zlar tahlili: asl so'z — ehtimoliy ma'no.
-4. Talaffuz/transliteratsiya (ishonchli bo'lsa; aks holda taxminiy deb belgilang).
-5. Noaniq yoki taxminiy joylar (faqat mavjud bo'lsa).
-6. Tarixiy/grammatik izoh (foydali bo'lsa).
-
-{('Tahlil va izohlarni ham kiriting.' if include_notes else 'Javobni ixcham bering, ammo noaniqlikni yashirmang.')}
-
-MATN:
-{input_text}
-"""
-        else:
-            prompt = f"""
-Quyidagi matnni {source} tilidan {target} tiliga tarjima qil.
-Ma'noni, uslubni va grammatikani saqla. Ismlar va maxsus atamalarni ehtiyotkorlik bilan tarjima qil.
-{('Zarur bo‘lsa, muhim iboralar haqida qisqa izoh ber.' if include_notes else 'Faqat tarjimani ber.')}
-
-MATN:
-{input_text}
-"""
-
-        with st.spinner("Matn tahlil qilinib, tarjima qilinmoqda..."):
-            result = ask_ai(prompt)
-
-        st.markdown("### Tarjima natijasi")
-        st.text_area("JON AI tarjimasi", result, height=280)
-        st.caption("Qadimgi tillar bo'yicha ayrim shakl va ma'nolar ilmiy jihatdan bahsli bo'lishi mumkin. Taxminlar alohida ko'rsatiladi.")
-
-
-# ============================================================
-# 12. IMAGE PROMPT STUDIO
-# ============================================================
-
-def render_image_prompt():
-    st.title("🎨 AI Image Prompt Studio")
-
-    subject = st.text_input("Rasm mavzusi")
-
-    style = st.selectbox(
-        "Tasvir uslubi",
-        [
-            "Photorealistic",
-            "3D cinematic",
-            "Anime",
-            "Cyberpunk",
-            "Fantasy",
-            "Minimalist",
-            "Luxury advertising"
-        ]
-    )
-
-    lighting = st.selectbox(
-        "Yoritish",
-        [
-            "Cinematic lighting",
-            "Neon lighting",
-            "Natural light",
-            "Studio lighting"
-        ]
-    )
-
-    ratio = st.selectbox(
-        "Format",
-        ["16:9", "1:1", "9:16", "4:5"]
-    )
-
-    details = st.text_area("Qo'shimcha detallar")
-
-    if st.button("✨ Prompt yaratish", use_container_width=True):
-        prompt = f"""
-        Create a professional image generation prompt.
-        Subject: {subject}
-        Style: {style}
-        Lighting: {lighting}
-        Aspect ratio: {ratio}
-        Details: {details}
-
-        Write a detailed English prompt and a negative prompt.
-        """
-
-        with st.spinner("Prompt yaratilmoqda..."):
-            result = ask_ai(prompt)
-
-        st.markdown(result)
-        st.session_state.copied_prompt = result
-        st.code(result, language="text")
-
-
-# ============================================================
-# 13. EXCEL ANALYSIS
-# ============================================================
-
-def render_excel():
-    st.title("📈 JON AI — Excel Analysis")
-
-    uploaded = st.file_uploader(
-        "Excel yoki CSV fayl yuklang",
-        type=["xlsx", "xls", "csv"]
-    )
-
-    if uploaded:
-        try:
-            if uploaded.name.lower().endswith(".csv"):
-                df = pd.read_csv(uploaded)
-            else:
-                df = pd.read_excel(uploaded)
-
-            st.success("Fayl muvaffaqiyatli yuklandi.")
-
-            st.markdown("### Ma'lumotlar")
-            st.dataframe(df, use_container_width=True)
-
-            c1, c2, c3 = st.columns(3)
-
-            c1.metric("Qatorlar", len(df))
-            c2.metric("Ustunlar", len(df.columns))
-            c3.metric(
-                "Bo'sh qiymatlar",
-                int(df.isna().sum().sum())
-            )
-
-            st.markdown("### Statistik ma'lumotlar")
-
-            st.dataframe(
-                df.describe(include="all").transpose(),
-                use_container_width=True
-            )
-
-            question = st.text_area(
-                "JON AI dan qanday tahlil kerak?"
-            )
-
-            if st.button("📊 AI tahlil"):
-                context = df.head(30).to_string()
-                context += "\n\nStatistika:\n"
-                context += df.describe(include="all").to_string()
-
-                prompt = question or (
-                    "Ushbu jadvalni professional tahlil qil. "
-                    "Muhim xulosalar va tavsiyalar ber."
-                )
-
-                with st.spinner("Tahlil qilinmoqda..."):
-                    result = ask_ai(
-                        prompt,
-                        extra_context=context
-                    )
-
-                st.markdown(result)
-
-        except Exception as error:
-            st.error(f"Faylni o'qishda xato: {error}")
-            
-# ============================================================
-# 14. TASK MANAGER
-# ============================================================
-
-def render_tasks():
-    st.title("📝 JON AI — Vazifalar")
-
-    task = st.text_input("Yangi vazifa")
-
-    if st.button("➕ Vazifa qo'shish"):
-        if task.strip():
-            st.session_state.tasks.append({
-                "task": task.strip(),
-                "done": False
-            })
-            st.rerun()
-
-    if not st.session_state.tasks:
-        st.info("Hozircha vazifalar yo'q.")
-        return
-
-    for index, item in enumerate(st.session_state.tasks):
-        col1, col2 = st.columns([5, 1])
-
-        with col1:
-            checked = st.checkbox(
-                item["task"],
-                value=item["done"],
-                key=f"task_{index}"
-            )
-            st.session_state.tasks[index]["done"] = checked
-
-        with col2:
-            if st.button("🗑️", key=f"delete_task_{index}"):
-                st.session_state.tasks.pop(index)
-                st.rerun()
-
-
-# ============================================================
-# 15. CAMERA
-# ============================================================
-
-def render_camera():
-    st.title("📷 JON AI — Camera Studio")
-
-    st.info(
-        "Kamera ishlashi uchun brauzer yoki ilovada "
-        "kamera ruxsatini bering."
-    )
-
-    photo = st.camera_input("Suratga olish")
-
-    if photo:
-        st.image(
-            photo,
-            caption="Sizning suratingiz",
-            use_container_width=True
-        )
-
-        st.success("Surat olindi.")
-
-        if st.button("🤖 Rasmni AI bilan tahlil qilish"):
-            st.info(
-                "Kamera orqali surat olish mavjud. "
-                "AI rasm tahlili uchun Gemini Vision "
-                "integratsiyasi keyingi bosqichda qo'shiladi."
-            )
-
-
-# ============================================================
-# 16. CHARACTER STUDIO
-# ============================================================
-
-def render_character():
-    st.title("👤 JON AI — Character Studio")
-
-    show_character(520, cinematic=False)
-
-    st.markdown("### Personaj sozlamalari")
-
-    name = st.text_input(
-        "Personaj nomi",
-        value=st.session_state.character_name
-    )
-
-    styles = [
-        "Hologramma",
-        "Realistik robot",
-        "Multfilm uslubi",
-        "Fantastik"
-    ]
-
-    style = st.selectbox(
-        "Personaj uslubi",
-        styles,
-        index=styles.index(st.session_state.character_style)
-        if st.session_state.character_style in styles else 0
-    )
-
-    animation = st.selectbox(
-        "Animatsiya rejimi",
-        ["Raqs", "Tabiiy harakat", "Sokin", "Energetik"]
-    )
-
-    intro = st.checkbox(
-        "Kirish effektini yoqish",
-        value=st.session_state.intro_enabled
-    )
-
-    if st.button("💾 Saqlash"):
-        st.session_state.character_name = name
-        st.session_state.character_style = style
-        st.session_state.character_animation = animation
-        st.session_state.intro_enabled = intro
-
-        st.success("Personaj sozlamalari saqlandi.")
         st.rerun()
 
-    st.caption(
-        "Haqiqiy yuz ifodalari, ovoz bilan lab sinxronlash "
-        "va kamera orqali kuzatish alohida integratsiyani talab qiladi."
+
+# ------------------------------------------------------------
+# 4. KUNLIK MOTIVATSIYA RAMKASI
+# ------------------------------------------------------------
+
+JON_MOTIVATION_QUOTES = [
+    "Buyuk maqsadlar kichik, ammo qat'iy qadamlardan boshlanadi.",
+    "Bugungi mehnating ertangi muvaffaqiyatingni yaratadi.",
+    "O'zingga ishon. Sen o'ylaganingdan ham kuchlisan.",
+    "Mukammallikni kutma. Boshlagin va rivojlan.",
+    "Har bir qiyinchilik seni kuchliroq qiladi.",
+    "Maqsadingni unutma. Har kuni unga bir qadam yaqinlash.",
+    "Muvaffaqiyat tasodif emas, u intizom natijasidir.",
+    "Bugun taslim bo'lmasang, ertaga faxrlanasan.",
+    "Orzular rejasiz amalga oshmaydi. Harakatni boshlagin.",
+    "Kelajaging bugun qilayotgan tanlovlaringdan boshlanadi."
+]
+
+
+def render_motivation_frame():
+
+    today = date.today()
+    quote_index = today.toordinal() % len(JON_MOTIVATION_QUOTES)
+    quote = JON_MOTIVATION_QUOTES[quote_index]
+
+    st.markdown(
+        f"""
+        <div style="
+            position:relative;
+            overflow:hidden;
+            padding:28px 22px;
+            margin:22px 0;
+            border-radius:22px;
+            background:
+                radial-gradient(
+                    circle at 10% 20%,
+                    rgba(0,220,255,0.20),
+                    transparent 45%
+                ),
+                linear-gradient(
+                    135deg,
+                    #07152b,
+                    #10102d,
+                    #17102b
+                );
+            border:1px solid rgba(0,220,255,0.55);
+            box-shadow:
+                0 0 15px rgba(0,220,255,0.20),
+                inset 0 0 25px rgba(100,0,255,0.12);
+            text-align:center;
+        ">
+            <div style="
+                color:#00eaff;
+                font-size:13px;
+                font-weight:800;
+                letter-spacing:4px;
+                margin-bottom:15px;
+            ">
+                ✦ JON AI DAILY MOTIVATION ✦
+            </div>
+
+            <div style="
+                color:white;
+                font-size:22px;
+                font-weight:700;
+                line-height:1.5;
+                text-shadow:0 0 12px rgba(0,220,255,0.35);
+            ">
+                “{quote}”
+            </div>
+
+            <div style="
+                color:#9ca9c7;
+                font-size:12px;
+                margin-top:17px;
+                letter-spacing:2px;
+            ">
+                BUGUNGI MAQSADING — ERTANGI NATIJANG
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
-# ============================================================
-# 17. SETTINGS
-# ============================================================
+# ------------------------------------------------------------
+# 5. BOSH SAHIFA — MOTIVATSIYA RAMKASI BILAN YANGILANGAN
+# Bu funksiya oldingi render_home() o‘rnini egallaydi.
+# ------------------------------------------------------------
 
-def render_settings():
-    st.title("⚙️ JON AI — System Settings")
+def render_home():
 
-    st.markdown("### Gemini API")
+    st.markdown(
+        """
+        <div style="text-align:center; padding:10px 0;">
+            <div style="
+                font-size:38px;
+                font-weight:900;
+                letter-spacing:5px;
+                color:#00eaff;
+                text-shadow:0 0 18px rgba(0,220,255,0.65);
+            ">
+                JON AI
+            </div>
 
-    key = st.text_input(
-        "Gemini API Key",
-        type="password",
-        value=st.session_state.api_key
+            <div style="
+                color:#9ba9c9;
+                font-size:12px;
+                letter-spacing:5px;
+            ">
+                LIVE INTELLIGENCE
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    models = [
-        "gemini-3.8-flash",
-        "gemini-3.5-flash-lite"
-    ]
+    # Asosiy yagona jonli personaj
+    show_character(height=590)
 
-    current_model = st.session_state.model
+    # Motivatsiya ramkasi
+    render_motivation_frame()
 
-    model = st.selectbox(
-        "Gemini modeli",
-        models,
-        index=models.index(current_model)
-        if current_model in models else 0
-    )
+    st.markdown("### ✦ JON AI imkoniyatlari")
 
-    if st.button("💾 API sozlamalarini saqlash"):
-        st.session_state.api_key = key.strip()
-        st.session_state.model = model
-        st.success("Sozlamalar saqlandi.")
-
-    st.markdown("---")
-    st.markdown("### Ulanishni tekshirish")
-
-    if st.button("🔍 Gemini API ni tekshirish"):
-        if not get_api_key():
-            st.error("Avval API kalitini kiriting.")
-        else:
-            with st.spinner("Ulanish tekshirilmoqda..."):
-                if check_model():
-                    st.success("Gemini API muvaffaqiyatli ishlayapti.")
-
-    st.markdown("---")
-
-    st.markdown("### System information")
-    st.write("JON AI Version:", APP_VERSION)
-    st.write("Selected model:", st.session_state.model)
-
-    st.warning(
-        "API kalitni ommaviy GitHub kodiga yozmang. "
-        "Streamlit Secrets orqali saqlash xavfsizroq."
-    )
-
-
-# ============================================================
-# 18. PREMIUM CREATIVE STUDIO
-# ============================================================
-
-def render_premium():
-    st.title("💎 JON AI — Premium Creative Studio")
-
-    st.markdown("""
-    <div class="panel">
-    <h2>🚀 NEXT GENERATION CREATIVE LAB</h2>
-    Professional ijodiy loyihalar uchun yagona markaz.
-    </div>
-    """, unsafe_allow_html=True)
+    feature_columns = st.columns(2)
 
     features = [
-        ("🎬 AI Video Studio", "Video ssenariy va sahnalar"),
-        ("🎵 AI Music Studio", "Original musiqa g'oyalari"),
-        ("🏢 Logo Studio", "Kompaniya logotipi konsepsiyasi"),
-        ("🎭 Character Animation", "Personaj animatsiyasi"),
-        ("📸 Photo to Movie", "Suratdan video ssenariysi"),
-        ("🎨 Photo to Cartoon", "Multfilm uslubidagi promptlar"),
-        ("🎞️ Movie Maker", "Film ssenariysi va storyboard"),
-        ("✨ Visual Effects", "Maxsus effektlar g'oyalari")
+        ("🤖", "AI Chat", "AI bilan suhbat"),
+        ("🎓", "Ta'lim markazi", "Bilim va o‘rganish"),
+        ("📊", "PowerPoint", "Taqdimot yaratish"),
+        ("🌐", "Tarjimon", "Ko‘p tilli tarjima"),
+        ("🎨", "Rasm prompti", "Ijodiy g‘oyalar"),
+        ("📈", "Excel tahlil", "Ma'lumotlarni tahlil qilish")
     ]
 
-    cols = st.columns(2)
+    for index, feature in enumerate(features):
 
-    for i, (title, description) in enumerate(features):
-        with cols[i % 2]:
+        icon, title, description = feature
+        column = feature_columns[index % 2]
+
+        with column:
+
             st.markdown(
                 f"""
-                <div class="feature-card">
-                    <h3>{title}</h3>
-                    <p>{description}</p>
+                <div style="
+                    padding:17px;
+                    margin:6px 0;
+                    border-radius:15px;
+                    background:rgba(15,30,60,0.75);
+                    border:1px solid rgba(0,220,255,0.25);
+                ">
+                    <div style="font-size:25px;">{icon}</div>
+                    <div style="
+                        color:white;
+                        font-weight:800;
+                        margin-top:5px;
+                    ">{title}</div>
+                    <div style="
+                        color:#9ba9c9;
+                        font-size:12px;
+                    ">{description}</div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-    st.markdown("---")
-    st.markdown("### Creative AI Assistant")
+            if st.button(
+                f"{title} →",
+                key=f"home_feature_{index}",
+                use_container_width=True
+            ):
+                go_to_page(title)
+    
+# ============================================================
+# JON AI LIVE 10.0 — 5-QISM
+# TA'LIM MARKAZI + POWERPOINT + TARJIMON
+# ============================================================
 
-    project = st.selectbox(
-        "Loyiha turi",
-        [
-            "Kompaniya logotipi",
-            "Reklama videosi",
-            "Kino ssenariysi",
-            "Musiqa konsepsiyasi",
-            "3D personaj",
-            "Animatsion video",
-            "Professional prezentatsiya"
+
+# ------------------------------------------------------------
+# 1. GEMINI BILAN ISHLASH UCHUN YORDAMCHI FUNKSIYA
+# ------------------------------------------------------------
+
+def jon_generate(prompt):
+
+    try:
+        result = ask_ai(prompt)
+
+        if not result:
+            return "JON hozir javob tayyorlay olmadi. Qayta urinib ko‘ring."
+
+        return str(result).strip()
+
+    except Exception as error:
+        return explain_api_error(error)
+
+
+# ------------------------------------------------------------
+# 2. TA'LIM MARKAZI
+# ------------------------------------------------------------
+
+def render_education():
+
+    st.title("🎓 JON AI — Ta'lim markazi")
+
+    st.write(
+        "Turli fanlarni o‘rganing, mavzularni tushuning "
+        "va bilimlaringizni sinab ko‘ring."
+    )
+
+    tab1, tab2, tab3 = st.tabs([
+        "📚 Mavzuni tushuntirish",
+        "📝 Test yaratish",
+        "✍️ Mashq va topshiriq"
+    ])
+
+    with tab1:
+
+        st.subheader("Mavzuni sodda tushuntirish")
+
+        subject = st.text_input(
+            "Fan yoki mavzu",
+            placeholder="Masalan: Ingliz tili — Present Perfect",
+            key="edu_subject"
+        )
+
+        level = st.selectbox(
+            "Bilim darajasi",
+            [
+                "Boshlang‘ich",
+                "O‘rta",
+                "Yuqori",
+                "Professional"
+            ],
+            key="edu_level"
+        )
+
+        explanation_style = st.selectbox(
+            "Tushuntirish uslubi",
+            [
+                "Sodda va tushunarli",
+                "Batafsil va chuqur",
+                "Misollar bilan",
+                "Bosqichma-bosqich"
+            ],
+            key="edu_style"
+        )
+
+        if st.button(
+            "Mavzuni tushuntir",
+            key="edu_explain",
+            use_container_width=True
+        ):
+
+            if not subject.strip():
+                st.warning("Avval mavzuni kiriting.")
+            else:
+
+                prompt = f"""
+                Quyidagi mavzuni o‘zbek tilida tushuntir.
+
+                Mavzu: {subject}
+                O‘quvchi darajasi: {level}
+                Uslub: {explanation_style}
+
+                Talablar:
+                1. Mavzuning asosiy mazmunini tushuntir.
+                2. Muhim qoidalarni ko‘rsat.
+                3. Hayotiy misollar keltir.
+                4. Keng tarqalgan xatolarni tushuntir.
+                5. Qisqa xulosa ber.
+                """
+
+                with st.spinner("JON mavzuni tayyorlamoqda..."):
+                    result = jon_generate(prompt)
+
+                st.markdown("### 📖 Dars")
+                st.markdown(result)
+
+    with tab2:
+
+        st.subheader("Aqlli test yaratuvchi")
+
+        test_topic = st.text_input(
+            "Test mavzusi",
+            placeholder="Masalan: Ingliz tili grammatikasi",
+            key="edu_test_topic"
+        )
+
+        question_count = st.slider(
+            "Savollar soni",
+            min_value=3,
+            max_value=20,
+            value=5,
+            key="edu_question_count"
+        )
+
+        test_level = st.selectbox(
+            "Test qiyinligi",
+            ["Oson", "O‘rta", "Qiyin"],
+            key="edu_test_level"
+        )
+
+        if st.button(
+            "Test yaratish",
+            key="edu_create_test",
+            use_container_width=True
+        ):
+
+            if not test_topic.strip():
+                st.warning("Test mavzusini kiriting.")
+            else:
+
+                prompt = f"""
+                {test_topic} mavzusida {question_count} ta test yarat.
+
+                Qiyinlik darajasi: {test_level}.
+
+                Har bir savolda A, B, C, D variantlari bo‘lsin.
+                Oxirida javoblar kalitini va qisqa izohlarni ber.
+                Savollar bir-birini takrorlamasin.
+                Javoblar ilmiy jihatdan to‘g‘ri bo‘lsin.
+                """
+
+                with st.spinner("Test yaratilmoqda..."):
+                    result = jon_generate(prompt)
+
+                st.markdown("### 📝 Tayyor test")
+                st.markdown(result)
+
+    with tab3:
+
+        st.subheader("Mashq va topshiriqlar")
+
+        exercise_topic = st.text_input(
+            "Mashq mavzusi",
+            placeholder="Masalan: Python dasturlash",
+            key="edu_exercise_topic"
+        )
+
+        exercise_type = st.selectbox(
+            "Topshiriq turi",
+            [
+                "Amaliy mashqlar",
+                "Uyga vazifa",
+                "Mustaqil ish",
+                "Savol-javob",
+                "Imtihonga tayyorgarlik"
+            ],
+            key="edu_exercise_type"
+        )
+
+        if st.button(
+            "Topshiriq tayyorlash",
+            key="edu_create_exercise",
+            use_container_width=True
+        ):
+
+            if not exercise_topic.strip():
+                st.warning("Mavzuni kiriting.")
+            else:
+
+                prompt = f"""
+                {exercise_topic} mavzusida o‘zbek tilida
+                quyidagi turdagi topshiriq tayyorla:
+
+                Topshiriq turi: {exercise_type}
+
+                Talablar:
+                - Bosqichma-bosqich topshiriqlar ber.
+                - Qiyinlik darajasini asta oshir.
+                - Har bir topshiriq maqsadini tushuntir.
+                - Oxirida tekshirish mezonlarini ber.
+                """
+
+                with st.spinner("Topshiriqlar tayyorlanmoqda..."):
+                    result = jon_generate(prompt)
+
+                st.markdown("### ✍️ Topshiriqlar")
+                st.markdown(result)
+
+
+# ------------------------------------------------------------
+# 3. POWERPOINT FAYL YARATISH
+# ------------------------------------------------------------
+
+def create_powerpoint(title, slide_text):
+
+    presentation = Presentation()
+
+    # Birinchi slayd — sarlavha
+    first_slide = presentation.slides.add_slide(
+        presentation.slide_layouts[0]
+    )
+
+    first_slide.shapes.title.text = title
+
+    if len(first_slide.placeholders) > 1:
+        first_slide.placeholders[1].text = (
+            "JON AI yordamida tayyorlandi"
+        )
+
+    # Matnni slaydlar bo‘yicha ajratish
+    sections = re.split(
+        r"(?im)^\s*(?:SLIDE|SLAYD)\s*\d*\s*[:.\-)]*\s*",
+        slide_text
+    )
+
+    sections = [
+        section.strip()
+        for section in sections
+        if section.strip()
+    ]
+
+    # Agar model SLIDE formatida javob bermasa,
+    # matnni paragraflar bo‘yicha ajratamiz.
+    if len(sections) <= 1:
+
+        paragraphs = [
+            paragraph.strip()
+            for paragraph in slide_text.split("\n\n")
+            if paragraph.strip()
         ]
+
+        sections = paragraphs if paragraphs else [slide_text]
+
+    for index, section in enumerate(sections[:20], start=1):
+
+        lines = [
+            line.strip()
+            for line in section.splitlines()
+            if line.strip()
+        ]
+
+        if not lines:
+            continue
+
+        slide_title = lines[0].strip("#* ")
+
+        slide = presentation.slides.add_slide(
+            presentation.slide_layouts[1]
+        )
+
+        slide.shapes.title.text = slide_title[:120]
+
+        body = slide.placeholders[1].text_frame
+        body.clear()
+
+        content_lines = lines[1:] if len(lines) > 1 else lines
+
+        for line_index, line in enumerate(content_lines):
+
+            if line_index == 0:
+                paragraph = body.paragraphs[0]
+            else:
+                paragraph = body.add_paragraph()
+
+            paragraph.text = line.lstrip("-•* ").strip()
+            paragraph.level = 0
+            paragraph.font.size = Pt(20)
+
+    output = BytesIO()
+    presentation.save(output)
+    output.seek(0)
+
+    return output.getvalue()
+
+
+# ------------------------------------------------------------
+# 4. POWERPOINT SAHIFASI
+# ------------------------------------------------------------
+
+def render_powerpoint():
+
+    st.title("📊 JON AI — PowerPoint Studio")
+
+    st.write(
+        "Mavzuni kiriting. JON AI siz uchun taqdimot "
+        "matnini yaratadi va PowerPoint fayliga aylantiradi."
     )
 
-    idea = st.text_area("Loyiha g'oyasi")
-
-    if st.button("✨ Creative loyiha yaratish"):
-        if not idea.strip():
-            st.warning("Loyiha g'oyasini kiriting.")
-            return
-
-        prompt = f"""
-        Professional creative director sifatida ishlang.
-
-        Loyiha turi: {project}
-        G'oya: {idea}
-
-        Professional konsepsiya, vizual yo'nalish,
-        ranglar, sahnalar va amalga oshirish rejasini yozing.
-        """
-
-        with st.spinner("Creative loyiha yaratilmoqda..."):
-            result = ask_ai(prompt)
-
-        st.markdown(result)
-
-
-# ============================================================
-# 19. MAIN ROUTER
-# ============================================================
-
-page = st.session_state.page
-
-if page == "🏠 Bosh sahifa":
-    render_home()
-
-elif page == "🤖 AI Chat":
-    render_chat()
-
-elif page == "🎓 Ta'lim markazi":
-    render_education()
-
-elif page == "📊 PowerPoint":
-    render_powerpoint()
-
-elif page == "🌐 Tarjimon":
-    render_translator()
-
-elif page == "🎨 Rasm prompti":
-    render_image_prompt()
-
-elif page == "📈 Excel tahlil":
-    render_excel()
-
-elif page == "📝 Vazifalar":
-    render_tasks()
-
-elif page == "📷 Kamera":
-    render_camera()
-
-elif page == "👤 Personaj":
-    render_character()
-
-elif page == "⚙️ Sozlamalar":
-    render_settings()
-
-elif page == "💎 Premium":
-    render_premium()
-
-
-# ============================================================
-# 20. FOOTER
-# ============================================================
-
-st.markdown("---")
-
-st.markdown(
-    """
-    <div style="text-align:center;color:#7895bd;padding:12px">
-        💎 JON AI LIVE 9.3<br>
-        NEXT GENERATION VIRTUAL INTELLIGENCE<br>
-        <small>Designed for the future.</small>
-    </div>
-    """,
-    unsafe_allow_html=True
+    title = st.text_input(
+        "Taqdimot sarlavhasi",
+        placeholder="Masalan: Sun'iy intellekt kelajagi",
+        key="ppt_title"
     )
-                
+
+    slide_count = st.slider(
+        "Slaydlar soni",
+        min_value=3,
+        max_value=20,
+        value=7,
+        key="ppt_slide_count"
+    )
+
+    audience = st.selectbox(
+        "Taqdimot kimlar uchun?",
+        [
+            "Maktab o‘quvchilari",
+            "Universitet talabalari",
+            "O‘qituvchilar",
+            "Biznes va kompaniyalar",
+            "Umumiy auditoriya"
+        ],
+        key="ppt_audience"
+    )
+
+    design_style = st.selectbox(
+        "Taqdimot uslubi",
+        [
+            "Professional",
+            "Minimalistik",
+            "Zamonaviy texnologik",
+            "Ilmiy",
+            "Biznes"
+        ],
+        key="ppt_style"
+    )
+
+    if st.button(
+        "🚀 Taqdimot yaratish",
+        key="ppt_generate",
+        use_container_width=True
+    ):
+
+        if not title.strip():
+            st.warning("Taqdimot mavzusini kiriting.")
+
+        else:
+
+            prompt = f"""
+            "{title}" mavzusida {slide_count} ta slayd
+            uchun taqdimot tayyorla.
+
+            Auditoriya: {audience}
+            Dizayn uslubi: {design_style}
+
+            Natijani quyidagi formatda ber:
+
+            SLIDE 1: Sarlavha
+            Slayd matni
+
+            SLIDE 2: Sarlavha
+            Slayd matni
+
+            Har bir slaydda:
+            - Bitta aniq sarlavha.
+            - 3-5 ta mazmunli fikr.
+            - Zarur joyda misol yoki raqam.
+            - Qisqa va tushunarli matn.
+
+            Yakuniy slaydda xulosa bo‘lsin.
+            O‘zbek tilida yoz.
+            """
+
+            with st.spinner("JON taqdimot ustida ishlamoqda..."):
+
+                result = jon_generate(prompt)
+
+            if result:
+
+                st.session_state["ppt_result"] = result
+                st.session_state["ppt_result_title"] = title
+
+    if st.session_state.get("ppt_result"):
+
+        st.markdown("### 📑 Taqdimot matni")
+
+        st.markdown(st.session_state["ppt_result"])
+
+        try:
+
+            pptx_data = create_powerpoint(
+                st.session_state.get(
+                    "ppt_result_title",
+                    "JON AI taqdimoti"
+                ),
+                st.session_state["ppt_result"]
+            )
+
+            st.download_button(
+                label="⬇️ PowerPoint faylini yuklab olish",
+                data=pptx_data,
+                file_name="JON_AI_Presentation.pptx",
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "presentationml.presentation"
+                ),
+                key="ppt_download",
+                use_container_width=True
+            )
+
+        except Exception as error:
+
+            st.error(
+                "PowerPoint faylini yaratishda xatolik: "
+                + str(error)
+            )
+
+
+# ------------------------------------------------------------
+# 5. KO‘P TILLI TARJIMON
+# ------------------------------------------------------------
+
+def render_translator():
+
+    st.title("🌐 JON AI — Universal Translator")
+
+    st.write(
+        "Matnlarni turli tillarga tarjima qiling. "
+        "JON AI tarjimaning mazmuni va ohangini saqlashga harakat qiladi."
+    )
+
+    languages = [
+        "O‘zbek",
+        "Ingliz",
+        "Rus",
+        "Turk",
+        "Arab",
+        "Nemis",
+        "Fransuz",
+        "Ispan",
+        "Xitoy",
+        "Yapon",
+        "Koreys",
+        "Italyan"
+    ]
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        source_language = st.selectbox(
+            "Asl til",
+            ["Avtomatik aniqlash"] + languages,
+            key="translator_source"
+        )
+
+    with col2:
+        target_language = st.selectbox(
+            "Tarjima tili",
+            languages,
+            index=1,
+            key="translator_target"
+        )
+
+    original_text = st.text_area(
+        "Tarjima qilinadigan matn",
+        height=200,
+        placeholder="Matningizni shu yerga yozing...",
+        key="translator_text"
+    )
+
+    translation_style = st.selectbox(
+        "Tarjima uslubi",
+        [
+            "Tabiiy va ravon",
+            "Rasmiy",
+            "Akademik",
+            "Oddiy kundalik",
+            "So‘zma-so‘z"
+        ],
+        key="translator_style"
+    )
+
+    if st.button(
+        "🌍 Tarjima qilish",
+        key="translate_button",
+        use_container_width=True
+    ):
+
+        if not original_text.strip():
+
+            st.warning("Tarjima qilinadigan matnni kiriting.")
+
+        else:
+
+            prompt = f"""
+            Quyidagi matnni tarjima qil.
+
+            Asl til: {source_language}
+            Maqsad til: {target_language}
+            Uslub: {translation_style}
+
+            Talablar:
+            - Asl ma'noni saqla.
+            - Grammatik jihatdan to‘g‘ri tarjima qil.
+            - Keraksiz izohlar qo‘shma.
+            - Ismlar va maxsus atamalarni ehtiyotkorlik bilan tarjima qil.
+            - Agar so‘zning bir nechta ma'nosi bo‘lsa,
+              kontekstga mosini tanla.
+
+            MATN:
+            {original_text}
+            """
+
+            with st.spinner("JON tarjima qilmoqda..."):
+
+                translated = jon_generate(prompt)
+
+            st.session_state["translation_result"] = translated
+
+    if st.session_state.get("translation_result"):
+
+        st.markdown("### ✅ Tarjima natijasi")
+
+        st.text_area(
+            "Tayyor tarjima",
+            value=st.session_state["translation_result"],
+            height=200,
+            key="translation_output"
+        )
+
+        st.button(
+            "📋 Tarjimani nusxalash",
+            key="copy_translation",
+            on_click=lambda: st.session_state.update({
+                "translation_copied": True
+            })
+        )
+
+        if st.session_state.get("translation_copied"):
+            st.info(
+                "Tarjima matni yuqoridagi maydonda. "
+                "Uni bosib, matnni nusxalashingiz mumkin."
+            )
+
+# ============================================================
+# 5-QISM TUGADI
+# KEYINGI QISM: RASM PROMPTI + EXCEL TAHLIL + VAZIFALAR
+# ============================================================
