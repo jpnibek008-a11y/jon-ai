@@ -1465,6 +1465,7 @@ def show_character(height=640, cinematic=True):
 # 3-QISM — JON AI BOSH SAHIFASI VA NAVIGATSIYA
 # ============================================================
 
+
 def go_to_page(page):
     st.session_state["selected_page"] = page
     st.rerun()
@@ -1474,8 +1475,9 @@ def render_navigation():
     """JON AI yon navigatsiya paneli."""
 
     with st.sidebar:
+
         st.markdown(
-            f"""
+            """
             <div style="
                 text-align:center;
                 padding:15px 5px;
@@ -1486,12 +1488,14 @@ def render_navigation():
                     font-size:38px;
                     filter:drop-shadow(0 0 12px #00dfff);
                 ">💎</div>
+
                 <div style="
                     color:#65eaff;
                     font-size:22px;
                     font-weight:800;
                     letter-spacing:3px;
                 ">JON AI</div>
+
                 <div style="
                     color:#8ca9c5;
                     font-size:10px;
@@ -1502,96 +1506,56 @@ def render_navigation():
             unsafe_allow_html=True
         )
 
-        current_page = st.session_state.get(
-            "selected_page", "Bosh sahifa"
+        st.markdown("### Navigatsiya")
+
+        selected = st.session_state.get(
+            "selected_page",
+            PAGES[0]
         )
 
-        try:
-            selected_index = PAGES.index(current_page)
-        except ValueError:
-            selected_index = 0
+        if selected not in PAGES:
+            selected = PAGES[0]
 
-        selected_page = st.radio(
-            "NAVIGATSIYA",
+        page = st.radio(
+            "Bo‘limni tanlang",
             PAGES,
-            index=selected_index,
+            index=PAGES.index(selected),
             key="jon_navigation"
         )
 
-        if selected_page != current_page:
-            st.session_state["selected_page"] = selected_page
-            st.rerun()
+        st.session_state["selected_page"] = page
 
         st.divider()
 
-        st.markdown("### 👤 JON personaji")
-
-        st.caption("Personaj ko‘rinishini sozlang.")
-
-        style_options = [
-            "Hologramma",
-            "Realistik robot",
-            "Multfilm uslubi",
-            "Fantastik"
-        ]
-
-        current_style = st.session_state.get(
-            "character_style", "Hologramma"
-        )
-
-        if current_style not in style_options:
-            current_style = "Hologramma"
+        st.markdown("### 👤 Personaj sozlamalari")
 
         st.selectbox(
-            "Personaj uslubi",
-            style_options,
-            index=style_options.index(current_style),
+            "JON ko‘rinishi",
+            [
+                "Hologramma",
+                "Realistik robot",
+                "Multfilm uslubi",
+                "Fantastik"
+            ],
             key="character_style"
         )
 
-        animation_options = [
-            "Tabiiy harakat",
-            "Raqs",
-            "Energetik",
-            "Sokin"
-        ]
-
-        current_animation = st.session_state.get(
-            "animation", "Tabiiy harakat"
-        )
-
-        if current_animation not in animation_options:
-            current_animation = "Tabiiy harakat"
-
         st.selectbox(
-            "Harakat turi",
-            animation_options,
-            index=animation_options.index(current_animation),
-            key="animation"
+            "Harakat uslubi",
+            [
+                "Raqs",
+                "Tabiiy harakat",
+                "Sokin",
+                "Energetik"
+            ],
+            key="character_animation"
         )
 
-        st.divider()
+        st.caption("💎 JON AI LIVE 10.0")
+        st.caption("Status: ONLINE")
 
-        st.markdown(
-            """
-            <div style="
-                color:#65eaff;
-                font-size:12px;
-                text-align:center;
-                letter-spacing:2px;
-            ">
-                ● SYSTEM ONLINE
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.caption(
-            f"JON AI versiyasi: {APP_VERSION}"
-        )
-
-
-def render_home():
+    return page
+    def render_home():
     """JON AI asosiy bosh sahifasi."""
 
     st.markdown(
