@@ -1,4 +1,4 @@
-
+from jon_character import show_character
 # ============================================================
 # JON AI LIVE 10.1 — YAXLIT, TARTIBLANGAN STREAMLIT ILOVASI
 # ============================================================
