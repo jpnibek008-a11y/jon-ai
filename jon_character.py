@@ -352,21 +352,30 @@ window.addEventListener("resize",resize);
         height=height,
         scrolling=False
     )
-
-
 def show_character(height=620, speaking=False):
-    mode = st.session_state.get(
+    animation = st.session_state.get(
         "character_animation", "idle"
     )
+
+    if speaking:
+        animation = "speaking"
+    elif animation in ("Raqs", "Dance", "dance"):
+        animation = "dance"
+    elif animation in ("Tinglash", "listening"):
+        animation = "listening"
+    else:
+        animation = "idle"
 
     render_character(
         height=height,
         name=st.session_state.get("character_name", "JON"),
-        mode=mode,
+        mode=animation,
         speaking=speaking,
-        style="Human + Android",
+        style=st.session_state.get(
+            "character_style", "Human + Android"
+        ),
         model_url=st.session_state.get(
-            "character_model_url", None
+            "character_model_url"
         )
     )
   
