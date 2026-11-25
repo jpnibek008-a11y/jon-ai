@@ -1,4 +1,4 @@
-from jon_character import show_character
+from jon_character import show_character as character_engine_show
 # ============================================================
 # JON AI LIVE 10.1 — YAXLIT, TARTIBLANGAN STREAMLIT ILOVASI
 # ============================================================
@@ -149,9 +149,8 @@ Savol: {prompt}
         return raw
         
 # ---------------------- 3D JON CHARACTER ----------------------
-
-
 def show_character(height=560):
+    character_engine_show(height=height)
     config = {
         "height": int(height),
         "name": st.session_state.get("character_name", "JON"),
