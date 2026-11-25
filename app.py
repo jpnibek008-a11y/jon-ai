@@ -148,9 +148,14 @@ Savol: {prompt}
         st.session_state["jon_action"] = "speaking"
         return raw
         
-# ---------------------- 3D JON CHARACTER ----------------------
-def show_character(height=560):
-    character_engine_show(height=height)
+# ---------------------- JON CHARACTER ENGINE ----------------------
+
+def show_character(height=560, speaking=False):
+    character_engine_show(
+        height=height,
+        speaking=speaking
+    )
+    
     config = {
         "height": int(height),
         "name": st.session_state.get("character_name", "JON"),
